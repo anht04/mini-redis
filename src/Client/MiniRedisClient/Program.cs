@@ -1,5 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using Common;
+using Common.Helpers;
 
 using var client = new TcpClient();
 
@@ -20,9 +22,9 @@ while (true)
         break;
     }
 
-    var request = Encoding.UTF8.GetBytes(input);
+    var sendingRequest = RESPFormatHelper.FormatRequest(input);
 
-    await stream.WriteAsync(request);
+    await stream.WriteAsync(Encoding.UTF8.GetBytes(sendingRequest));
 
     var bytesRead = await stream.ReadAsync(buffer);
 

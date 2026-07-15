@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniRedis", "MiniRedis.cspr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniRedisClient", "..\Client\MiniRedisClient\MiniRedisClient.csproj", "{AC86306F-F91B-44ED-89FC-9AD58AE544DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "..\Common\Common\Common.csproj", "{8D2EA265-17D8-4A4E-A0AE-3696989F94AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{AC86306F-F91B-44ED-89FC-9AD58AE544DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC86306F-F91B-44ED-89FC-9AD58AE544DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC86306F-F91B-44ED-89FC-9AD58AE544DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D2EA265-17D8-4A4E-A0AE-3696989F94AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D2EA265-17D8-4A4E-A0AE-3696989F94AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D2EA265-17D8-4A4E-A0AE-3696989F94AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D2EA265-17D8-4A4E-A0AE-3696989F94AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
