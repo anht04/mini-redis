@@ -1,14 +1,15 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Common;
 using Common.Helpers;
+using MiniRedis.Commands;
 using MiniRedis.Helpers;
+using MiniRedis.Models;
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 Console.WriteLine("Logs from your program will appear here!");
 
-Dictionary<string, string> _cache = new();
+Dictionary<CacheEntry, string> _cache = new();
 
 var server = new TcpListener(IPAddress.Any, 6379);
 server.Start();
@@ -32,21 +33,20 @@ async Task HandleClientAsync(Socket client)
         }
         var request = Encoding.UTF8.GetString(buffer);
 
-        Console.WriteLine($"Request: {request}");
+        // Console.WriteLine($"Request: {request}");
 
         var parsedArgs = RequestParserHelper.Parse(request);
-        var command = parsedArgs[0].ToUpper();
-        var response = command switch
+        string response;
+        var commandName = parsedArgs[0].ToUpper();
+        var command = CommandFactory.GetCommand(commandName);
+        if (command != null)
         {
-            "SET" => _cache.TryAdd(parsedArgs[2], parsedArgs[4])
-                ? RESPFormatHelper.FormatSimpleString("OK")
-                : RESPFormatHelper.FormatSimpleString("ERR"),
-            "GET" => _cache.TryGetValue(parsedArgs[4], out var data)
-                ? RESPFormatHelper.FormatBulkString(data)
-                : RedisConstants.NullBulkString,
-            _ => RESPFormatHelper.FormatErrorString($"ERR unknown command")
-
-        };
+            response = command.Execute(parsedArgs, _cache);
+        }
+        else
+        {
+            response = RESPFormatHelper.FormatErrorString("Unknown command: " + commandName);
+        }
 
         await client.SendAsync(Encoding.UTF8.GetBytes(response));
     }

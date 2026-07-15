@@ -19,7 +19,7 @@ namespace MiniRedis.Helpers
             }
 
             var result = new List<string>();
-            for (int i = 2; i < args.Length; i++)
+            for (int i = 2; i < args.Length; i+=2)
             {
                 result.Add(args[i]);
             }

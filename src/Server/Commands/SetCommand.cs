@@ -1,14 +1,45 @@
-﻿using Common;
-using Common.Helpers;
+﻿using Common.Helpers;
 using MiniRedis.Commands.Abstractions;
+using MiniRedis.Models;
 
 namespace MiniRedis.Commands;
 
 public class SetCommand : ICommand
 {
-    public string Execute(List<string> args, Dictionary<string, string> cache)
+    public string Execute(List<string> args, Dictionary<CacheEntry, string> cache)
     {
-        return cache.TryAdd(args[2], args[4])
+        if (args.Count < 3)
+        {
+            return RESPFormatHelper.FormatErrorString("ERR wrong number of arguments for 'set' command");
+        }
+        
+        var key = args[1];
+        var value = args[2];
+
+        DateTimeOffset? expireAt = null;
+        
+        if (args.Count > 4)
+        {
+            if(!int.TryParse(args[4], out var expireDuration))
+            {
+                return RESPFormatHelper.FormatSimpleString("ERR");
+            }
+
+            expireAt = args[3].ToUpper() switch
+            {
+                "PX" => DateTimeOffset.UtcNow.AddMilliseconds(expireDuration),
+                "EX" => DateTimeOffset.UtcNow.AddSeconds(expireDuration),
+                _ => null
+            };
+        }
+
+        var cacheEntry = new CacheEntry
+        {
+            Key = key,
+            ExpireAtMs = expireAt?.ToUnixTimeMilliseconds()
+        };
+        
+        return cache.TryAdd(cacheEntry, value)
             ? RESPFormatHelper.FormatSimpleString("OK")
             : RESPFormatHelper.FormatSimpleString("ERR");
     }
