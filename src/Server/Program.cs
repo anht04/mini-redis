@@ -38,8 +38,6 @@ async Task HandleClientAsync(Socket client)
         var command = parsedArgs[0].ToUpper();
         var response = command switch
         {
-            "PING" => RESPFormatHelper.FormatSimpleString("PONG"),
-            "ECHO" => RESPFormatHelper.FormatBulkString(parsedArgs[2]),
             "SET" => _cache.TryAdd(parsedArgs[2], parsedArgs[4])
                 ? RESPFormatHelper.FormatSimpleString("OK")
                 : RESPFormatHelper.FormatSimpleString("ERR"),

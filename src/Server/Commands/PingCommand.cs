@@ -1,4 +1,5 @@
-﻿using MiniRedis.Commands.Abstractions;
+﻿using Common.Helpers;
+using MiniRedis.Commands.Abstractions;
 
 namespace MiniRedis.Commands
 {
@@ -6,7 +7,7 @@ namespace MiniRedis.Commands
     {
         public string Execute(List<string> args, Dictionary<string, string> cache)
         {
-            throw new NotImplementedException();
+            return RESPFormatHelper.FormatSimpleString("PONG");
         }
     }
 }

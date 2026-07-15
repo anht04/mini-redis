@@ -1,4 +1,4 @@
-﻿namespace MiniRedis.Commands
+﻿namespace MiniRedis.Commands.Abstractions
 {
     public interface ICommand
     {
