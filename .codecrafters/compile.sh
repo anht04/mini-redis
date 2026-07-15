@@ -8,4 +8,7 @@
 
 set -e # Exit on failure
 
-dotnet build --configuration Release --output /tmp/codecrafters-build-redis-csharp src/MiniRedis/MiniRedis.csproj
+(
+  cd "$(dirname "$0")/.." # Đảm bảo đứng ở gốc repo
+  dotnet build --configuration Release --output /tmp/codecrafters-build-redis-csharp src/Server/MiniRedis.csproj
+)
