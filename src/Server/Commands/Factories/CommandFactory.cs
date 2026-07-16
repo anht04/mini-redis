@@ -9,6 +9,7 @@ public static class CommandFactory
         { "GET", new GetCommand() },
         { "SET", new SetCommand() },
         { "RPUSH", new RPushCommand() },
+        { "LPUSH", new LPushCommand() },
         { "LRANGE", new LRangeCommand() },
     };
 
