@@ -49,6 +49,18 @@ namespace MiniRedis.Models
             return currentValue.Count;
         }
 
+        public int AppendToList(List<string> values)
+        {
+            if (DataType != RedisDataType.List)
+            {
+                throw new ArgumentException();
+            }
+
+            var currentValue = (List<string>)_value ?? [];
+            currentValue.AddRange(values);
+            return currentValue.Count;
+        }
+
         public int GetListSize()
         {
             if (DataType != RedisDataType.List)
