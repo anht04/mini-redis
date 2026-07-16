@@ -19,56 +19,19 @@ namespace MiniRedis.Models
             _value = value;
         }
 
+        public bool IsString => DataType == RedisDataType.String;
+        public bool IsList => DataType == RedisDataType.List;
+
         public string AsString()
         {
-            if (DataType != RedisDataType.String)
-            {
-                throw new ArgumentException();
-            }
+            if (!IsString) throw new InvalidOperationException("Key holds the wrong kind of value");
             return (string)_value;
         }
 
         public List<string> AsList()
         {
-            if (DataType != RedisDataType.List)
-            {
-                throw new ArgumentException();
-            }
+            if (!IsList) throw new InvalidOperationException("Key holds the wrong kind of value");
             return (List<string>)_value;
-        }
-
-        public int AppendToList(string value)
-        {
-            if (DataType != RedisDataType.List)
-            {
-                throw new ArgumentException();
-            }
-
-            var currentValue = (List<string>)_value ?? [];
-            currentValue.Add(value);
-            return currentValue.Count;
-        }
-
-        public int AppendToList(List<string> values)
-        {
-            if (DataType != RedisDataType.List)
-            {
-                throw new ArgumentException();
-            }
-
-            var currentValue = (List<string>)_value ?? [];
-            currentValue.AddRange(values);
-            return currentValue.Count;
-        }
-
-        public int GetListSize()
-        {
-            if (DataType != RedisDataType.List)
-            {
-                throw new ArgumentException();
-            }
-
-            return ((List<string>)_value).Count;
         }
     }
 }
