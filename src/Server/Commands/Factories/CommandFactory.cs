@@ -8,6 +8,7 @@ public static class CommandFactory
         { "ECHO", new EchoCommand() },
         { "GET", new GetCommand() },
         { "SET", new SetCommand() },
+        { "RPUSH", new RPushCommand() },
     };
 
     public static ICommand? GetCommand(string commandName)

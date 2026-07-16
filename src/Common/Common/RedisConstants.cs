@@ -6,6 +6,7 @@
         public const string CRLF = "\r\n";
         public const string RESP_SimpleStringPrefix = "+";
         public const string RESP_BulkStringPrefix = "$";
+        public const string RESP_IntegerPrefix = ":";
         public const string RESP_ErrorResponsePrefix = "-";
         public const string RESP_NumberElementsInArrayPrefix = "*";
 
