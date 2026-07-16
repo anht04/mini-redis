@@ -8,7 +8,7 @@
         public const string RESP_BulkStringPrefix = "$";
         public const string RESP_IntegerPrefix = ":";
         public const string RESP_ErrorResponsePrefix = "-";
-        public const string RESP_NumberElementsInArrayPrefix = "*";
+        public const string RESP_ArrayPrefix = "*";
 
     }
 }

@@ -22,7 +22,7 @@ while (true)
         break;
     }
 
-    var sendingRequest = RESPFormatHelper.FormatRequest(input);
+    var sendingRequest = RESPFormatHelper.FormatArray(input);
 
     await stream.WriteAsync(Encoding.UTF8.GetBytes(sendingRequest));
 

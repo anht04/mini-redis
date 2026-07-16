@@ -4,6 +4,43 @@ namespace Common.Helpers
 {
     public static class RESPFormatHelper
     {
+        public static string FormatArray(string? value)
+        {
+            if(value is null)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+            var parts = value.Split(' ');
+            var prefix = FormatArrayLength(parts.Length);
+
+            foreach (var part in parts)
+            {
+                result.Append(FormatBulkString(part));
+            }
+
+            return result.Insert(0, prefix).ToString();
+        }
+
+        public static string FormatArray(List<string>? values)
+        {
+            if(values is null)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+            var prefix = FormatArrayLength(values.Count);
+
+            foreach (var value in values)
+            {
+                result.Append(FormatBulkString(value));
+            }
+
+            return result.Insert(0, prefix).ToString();
+        }
+
         public static string FormatSimpleString(string value)
         {
             return $"{RedisConstants.RESP_SimpleStringPrefix}{value}{RedisConstants.CRLF}";
@@ -25,28 +62,9 @@ namespace Common.Helpers
             return $"{RedisConstants.RESP_ErrorResponsePrefix}{value}{RedisConstants.CRLF}";
         }
 
-        public static string FormatRequest(string rawRequest)
+        private static string FormatArrayLength(int length)
         {
-            var result = new StringBuilder();
-            var parts = rawRequest.Split(' ');
-            var prefix = GetRESPPrefix(parts.Count());
-
-            foreach (var part in parts)
-            {
-                result.Append(FormatString(part));
-            }
-
-            return result.Insert(0, prefix).ToString();
-        }
-
-        private static string FormatString(string value)
-        {
-            return $"{RedisConstants.RESP_BulkStringPrefix}{value.Length}{RedisConstants.CRLF}{value}{RedisConstants.CRLF}";
-        }
-
-        private static string GetRESPPrefix(int length)
-        {
-            return $"{RedisConstants.RESP_NumberElementsInArrayPrefix}{length}{RedisConstants.CRLF}";
+            return $"{RedisConstants.RESP_ArrayPrefix}{length}{RedisConstants.CRLF}";
         }
     }
 }
