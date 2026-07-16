@@ -2,14 +2,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Common.Helpers;
-using MiniRedis.Commands;
+using MiniRedis.Commands.Factories;
 using MiniRedis.Helpers;
 using MiniRedis.Models;
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 Console.WriteLine("Logs from your program will appear here!");
 
-Dictionary<CacheEntry, string> _cache = new();
+Dictionary<RedisEntry, RedisValue> _cache = new();
 
 var server = new TcpListener(IPAddress.Any, 6379);
 server.Start();

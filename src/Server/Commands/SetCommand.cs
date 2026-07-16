@@ -1,12 +1,15 @@
 ﻿using Common.Helpers;
-using MiniRedis.Commands.Abstractions;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands;
 
 public class SetCommand : ICommand
 {
-    public string Execute(List<string> args, Dictionary<CacheEntry, string> cache)
+    public int Arity => throw new NotImplementedException();
+
+    public bool IsWriteCommand => true;
+
+    public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
     {
         if (args.Count < 3)
         {
@@ -14,7 +17,7 @@ public class SetCommand : ICommand
         }
         
         var key = args[1];
-        var value = args[2];
+        var rawValue = args[2];
 
         DateTimeOffset? expireAt = null;
         
@@ -33,13 +36,13 @@ public class SetCommand : ICommand
             };
         }
 
-        var cacheEntry = new CacheEntry
+        var cacheEntry = new RedisEntry
         {
             Key = key,
             ExpireAtMs = expireAt?.ToUnixTimeMilliseconds()
         };
         
-        return cache.TryAdd(cacheEntry, value)
+        return cache.TryAdd(cacheEntry, new RedisValue(rawValue))
             ? RESPFormatHelper.FormatSimpleString("OK")
             : RESPFormatHelper.FormatSimpleString("ERR");
     }

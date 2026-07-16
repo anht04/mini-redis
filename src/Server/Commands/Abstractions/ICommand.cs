@@ -4,6 +4,8 @@ namespace MiniRedis.Commands.Abstractions
 {
     public interface ICommand
     {
-        string Execute(List<string> args, Dictionary<CacheEntry, string> cache);
+        int Arity { get; }
+        bool IsWriteCommand { get; }
+        string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache);
     }
 }

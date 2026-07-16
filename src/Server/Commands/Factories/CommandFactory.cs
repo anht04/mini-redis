@@ -1,6 +1,4 @@
-﻿using MiniRedis.Commands.Abstractions;
-
-namespace MiniRedis.Commands;
+﻿namespace MiniRedis.Commands.Factories;
 
 public static class CommandFactory
 {

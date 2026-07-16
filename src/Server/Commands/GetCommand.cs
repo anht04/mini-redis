@@ -1,13 +1,16 @@
 ﻿using Common;
 using Common.Helpers;
-using MiniRedis.Commands.Abstractions;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands;
 
 public class GetCommand : ICommand
 {
-    public string Execute(List<string> args, Dictionary<CacheEntry, string> cache)
+    public int Arity => -2;
+
+    public bool IsWriteCommand => false;
+
+    public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
     {
         var targetKey = cache.Keys.FirstOrDefault(k => k.Key == args[1]);
         if (targetKey == null)
@@ -21,6 +24,6 @@ public class GetCommand : ICommand
             return RedisConstants.NullBulkString;
         }
 
-        return RESPFormatHelper.FormatBulkString(cache[targetKey]);
+        return RESPFormatHelper.FormatBulkString(cache[targetKey].AsString());
     }
 }
