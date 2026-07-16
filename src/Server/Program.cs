@@ -31,7 +31,7 @@ async Task HandleClientAsync(Socket client)
         {
             break;
         }
-        var request = Encoding.UTF8.GetString(buffer);
+        var request = Encoding.UTF8.GetString(buffer, 0 , byteReads);
 
         // Console.WriteLine($"Request: {request}");
 
