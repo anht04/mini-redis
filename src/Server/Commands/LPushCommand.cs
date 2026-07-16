@@ -24,7 +24,7 @@ namespace MiniRedis.Commands
             }
             if (!value.IsList)
             {
-                return RESPFormatHelper.FormatErrorString($"Duplicate key: {cacheKey}");
+                return RESPFormatHelper.FormatErrorString("WRONGTYPE Operation against a key holding the wrong kind of value");
             }
 
             var parsedValue = value.AsList();
