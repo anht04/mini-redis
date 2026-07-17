@@ -31,7 +31,7 @@ namespace MiniRedis.Commands
                 if (insertValues.Count > 1)
                 {
                     cache.Add(cacheKey, new RedisValue(insertValues[1..]));
-                    return RESPFormatHelper.FormatInteger(insertValues.Count + 1);
+                    return RESPFormatHelper.FormatInteger(insertValues.Count);
                 }
                 return RESPFormatHelper.FormatInteger(1);
             }
@@ -53,7 +53,7 @@ namespace MiniRedis.Commands
             }
             else
             {
-                return RESPFormatHelper.FormatInteger(valueList.Count + 1);
+                return RESPFormatHelper.FormatInteger(valueList.Count);
             }
         }
     }
