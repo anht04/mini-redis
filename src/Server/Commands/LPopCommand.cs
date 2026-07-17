@@ -1,4 +1,5 @@
-﻿using Common.Constants;
+﻿using System.Net.Sockets;
+using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Models;
 
@@ -10,7 +11,7 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => true;
 
-        public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
             bool hasCountArg = args.Count > 2;
@@ -18,7 +19,7 @@ namespace MiniRedis.Commands
 
             if (!cache.TryGetValue(cacheKey, out var redisValue))
             {
-                return hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString;
+                return Task.FromResult(hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString);
             }
 
             List<string>? valueList;
@@ -28,24 +29,21 @@ namespace MiniRedis.Commands
             }
             catch (Exception)
             {
-                return RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation);
+                return Task.FromResult(RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation));
             }
 
             if (valueList.Count == 0)
             {
-                return hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString;
+                return Task.FromResult(hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString);
             }
 
             int actualPopCount = Math.Min(requestedPopCount, valueList.Count);
             var poppedItems = valueList.GetRange(0, actualPopCount);
             valueList.RemoveRange(0, actualPopCount);
 
-            if (!hasCountArg)
-            {
-                return RESPFormatHelper.FormatBulkString(poppedItems[0]);
-            }
-
-            return RESPFormatHelper.FormatArray(poppedItems);
+            return Task.FromResult(!hasCountArg 
+                ? RESPFormatHelper.FormatBulkString(poppedItems[0]) 
+                : RESPFormatHelper.FormatArray(poppedItems));
         }
     }
 }

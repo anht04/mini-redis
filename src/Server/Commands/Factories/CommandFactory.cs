@@ -13,6 +13,7 @@ public static class CommandFactory
         { "LRANGE", new LRangeCommand() },
         { "LLEN", new LLenCommand() },
         { "LPOP", new LPopCommand() },
+        { "BLPOP", new BLPopCommand() },
     };
 
     public static ICommand? GetCommand(string commandName)

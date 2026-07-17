@@ -1,5 +1,7 @@
-﻿using Common.Constants;
+using System.Net.Sockets;
+using Common.Constants;
 using Common.Helpers;
+using MiniRedis.Commands.AsyncManagers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands
@@ -10,48 +12,51 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => true;
 
-        public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+        public async Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
         {
             var entryDateTimeUtc = DateTimeOffset.UtcNow;
-            var cacheKey = new RedisEntry { Key = args[0] };
-            var hasValidTimeoutArg = int.TryParse(args[1], out int timeoutInSecondsArg);
-
-            if (!cache.TryGetValue(cacheKey, out var redisValue))
+            var cacheKey = new RedisEntry { Key = args[1] };
+            var hasValidTimeoutArg = int.TryParse(args[2], out var timeoutInSecondsArg);
+            var currentClient = new SubscribedClient
             {
-                return RedisConstants.NullArray;
-            }
+                Socket = client,
+                SubscribedAt = entryDateTimeUtc,
+                SubscribedTo = new TaskCompletionSource<string>(),
+                TimeoutInSeconds = hasValidTimeoutArg ? timeoutInSecondsArg : null
+            };
+
+            cache.TryGetValue(cacheKey, out var redisValue);
 
             List<string> valueList;
             try
             {
-                valueList = redisValue.AsList();
+                valueList = redisValue?.AsList() ?? [];
             }
             catch (Exception)
             {
-                return RedisErrorMessages.WrongTypeOperation;
+                return await Task.FromResult(RedisErrorMessages.WrongTypeOperation);
             }
 
             var poppedItem = PopFromList(valueList);
             if (poppedItem != null)
             {
-                return RESPFormatHelper.FormatArray(poppedItem);
+                return await Task.FromResult(RESPFormatHelper.FormatArray([cacheKey.Key, poppedItem]));
             }
 
-            while (!hasValidTimeoutArg || (DateTimeOffset.UtcNow - entryDateTimeUtc).TotalSeconds >= timeoutInSecondsArg)
-            {
-                if (valueList.Count == 0)
-                {
-                    return RedisConstants.NullArray;
-                }
+            BlockingManager.Subscribe(cacheKey.Key, currentClient);
 
-                var item = PopFromList(valueList);
-                if (item != null)
-                {
-                    return RESPFormatHelper.FormatArray(item);
-                }
+            var delayMilliseconds = currentClient.TimeoutInSeconds is > 0
+                ? currentClient.TimeoutInSeconds.Value * 1000
+                : Timeout.Infinite;
+            var timeoutDelayTask = Task.Delay(delayMilliseconds);
+            var completedTask = await Task.WhenAny(currentClient.SubscribedTo.Task, timeoutDelayTask);
+
+            if (completedTask == currentClient.SubscribedTo.Task)            {
+                var item = await currentClient.SubscribedTo.Task;                
+                return await Task.FromResult(RESPFormatHelper.FormatArray([cacheKey.Key, item]));
             }
 
-            return RedisConstants.NullArray;
+            return await Task.FromResult(RedisConstants.NullArray);
         }
 
         private static string? PopFromList(List<string> list)
@@ -60,6 +65,7 @@ namespace MiniRedis.Commands
             {
                 return null;
             }
+
             var poppedItem = list[0];
             list.RemoveAt(0);
             return poppedItem;

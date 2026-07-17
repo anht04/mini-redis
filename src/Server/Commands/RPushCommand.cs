@@ -1,5 +1,7 @@
-﻿using Common.Constants;
+﻿using System.Net.Sockets;
+using Common.Constants;
 using Common.Helpers;
+using MiniRedis.Commands.AsyncManagers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands
@@ -10,29 +12,48 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => true;
 
-        public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
         {
-            var collectionKey = args[1];
-            var newValues = args[2..];
-            var key = new RedisEntry { Key = collectionKey };
+            var insertValues = args[2..];
+            var cacheKey = new RedisEntry { Key = args[1] };
 
-            if (cache.TryGetValue(key, out var value))
+            var waitingClient = BlockingManager.GetLongestClient(cacheKey.Key);
+            if (waitingClient == null)
             {
-                List<string>? parsedValue;
-                try
-                {
-                    parsedValue = value.AsList();
-                }
-                catch (Exception)
-                {
-                    return RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation);
-                }
-                parsedValue.AddRange(newValues);
-                return RESPFormatHelper.FormatInteger(parsedValue.Count);
+                return PushToCacheAndFormat(insertValues, cacheKey, cache);
+            }
+            
+            waitingClient.SubscribedTo.SetResult(insertValues[0]);
+            if (insertValues.Count == 1)
+            {
+                return Task.FromResult(RESPFormatHelper.FormatInteger(1));
             }
 
-            cache.Add(key, new RedisValue(newValues));
-            return RESPFormatHelper.FormatInteger(newValues.Count);
+            var remainingValues = insertValues.Skip(1).ToList();
+            return PushToCacheAndFormat(remainingValues, cacheKey, cache, 1);
+        }
+
+        private static Task<string> PushToCacheAndFormat(List<string> values, RedisEntry cacheKey,
+            Dictionary<RedisEntry, RedisValue> cache, int valuesSentToClientCount = 0)
+        {
+            if (!cache.TryGetValue(cacheKey, out var value))
+            {
+                cache.Add(cacheKey, new RedisValue(values));
+                return Task.FromResult(RESPFormatHelper.FormatInteger(values.Count + valuesSentToClientCount));
+            }
+            
+            List<string>? valueList;
+            try
+            {
+                valueList = value.AsList();
+            }
+            catch (Exception)
+            {
+                return Task.FromResult(RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation));
+            }
+
+            valueList.AddRange(values);
+            return Task.FromResult(RESPFormatHelper.FormatInteger(valueList.Count + valuesSentToClientCount));
         }
     }
 }

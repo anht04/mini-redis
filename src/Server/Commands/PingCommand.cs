@@ -1,4 +1,5 @@
-﻿using Common.Helpers;
+﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands
@@ -9,9 +10,9 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => false;
 
-        public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
         {
-            return RESPFormatHelper.FormatSimpleString("PONG");
+            return Task.FromResult(RESPFormatHelper.FormatSimpleString("PONG"));
         }
     }
 }

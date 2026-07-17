@@ -41,7 +41,7 @@ async Task HandleClientAsync(Socket client)
         var command = CommandFactory.GetCommand(commandName);
         if (command != null)
         {
-            response = command.Execute(parsedArgs, _cache);
+            response = await command.ExecuteAsync(parsedArgs, _cache, client);
         }
         else
         {

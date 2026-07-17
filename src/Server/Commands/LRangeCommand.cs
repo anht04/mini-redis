@@ -1,4 +1,5 @@
-﻿using Common.Helpers;
+﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands
@@ -9,7 +10,7 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => false;
 
-        public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
         {
             var cacheKey = args[1];
 
@@ -17,7 +18,7 @@ namespace MiniRedis.Commands
 
             if (value is null)
             {
-                return RESPFormatHelper.FormatArray(value: null);
+                return Task.FromResult(RESPFormatHelper.FormatArray(value: null));
             }
          
             var parsedValue = value.AsList();
@@ -26,7 +27,7 @@ namespace MiniRedis.Commands
 
             if (normalizedStartIndex >= parsedValue.Count)
             {
-                return RESPFormatHelper.FormatArray(value: null);
+                return Task.FromResult(RESPFormatHelper.FormatArray(value: null));
             }
 
             if (normalizedEndIndex >= parsedValue.Count)
@@ -34,7 +35,7 @@ namespace MiniRedis.Commands
                 normalizedEndIndex = parsedValue.Count - 1;
             }
 
-            return RESPFormatHelper.FormatArray(parsedValue.GetRange(normalizedStartIndex, normalizedEndIndex - normalizedStartIndex + 1));
+            return Task.FromResult(RESPFormatHelper.FormatArray(parsedValue.GetRange(normalizedStartIndex, normalizedEndIndex - normalizedStartIndex + 1)));
         }
 
         private static int ConvertToPositiveIndex(List<string> collection, int rawIndex)

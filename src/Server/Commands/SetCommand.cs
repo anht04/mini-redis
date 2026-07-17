@@ -1,4 +1,5 @@
-﻿using Common.Helpers;
+﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands;
@@ -9,11 +10,11 @@ public class SetCommand : ICommand
 
     public bool IsWriteCommand => true;
 
-    public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+    public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
     {
         if (args.Count < 3)
         {
-            return RESPFormatHelper.FormatErrorString("ERR wrong number of arguments for 'set' command");
+            return Task.FromResult(RESPFormatHelper.FormatErrorString("ERR wrong number of arguments for 'set' command"));
         }
         
         var key = args[1];
@@ -25,7 +26,7 @@ public class SetCommand : ICommand
         {
             if(!int.TryParse(args[4], out var expireDuration))
             {
-                return RESPFormatHelper.FormatSimpleString("ERR");
+                return Task.FromResult(RESPFormatHelper.FormatSimpleString("ERR"));
             }
 
             expireAt = args[3].ToUpper() switch
@@ -42,8 +43,8 @@ public class SetCommand : ICommand
             ExpireAtMs = expireAt?.ToUnixTimeMilliseconds()
         };
         
-        return cache.TryAdd(cacheEntry, new RedisValue(rawValue))
+        return Task.FromResult(cache.TryAdd(cacheEntry, new RedisValue(rawValue))
             ? RESPFormatHelper.FormatSimpleString("OK")
-            : RESPFormatHelper.FormatSimpleString("ERR");
+            : RESPFormatHelper.FormatSimpleString("ERR"));
     }
 }

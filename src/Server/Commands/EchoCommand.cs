@@ -1,16 +1,17 @@
-﻿using Common.Helpers;
+﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands;
 
 public class EchoCommand : ICommand
 {
-    public int Arity => throw new NotImplementedException();
+    public int Arity => -1;
 
     public bool IsWriteCommand => false;
 
-    public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+    public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
     {
-        return RESPFormatHelper.FormatBulkString(args[1]);
+        return Task.FromResult(RESPFormatHelper.FormatBulkString(args[1]));
     }
 }

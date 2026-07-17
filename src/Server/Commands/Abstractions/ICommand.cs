@@ -1,4 +1,5 @@
-﻿using MiniRedis.Models;
+﻿using System.Net.Sockets;
+using MiniRedis.Models;
 
 namespace MiniRedis.Commands.Abstractions
 {
@@ -6,6 +7,6 @@ namespace MiniRedis.Commands.Abstractions
     {
         int Arity { get; }
         bool IsWriteCommand { get; }
-        string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache);
+        Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client);
     }
 }

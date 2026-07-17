@@ -1,4 +1,5 @@
-﻿using Common.Constants;
+﻿using System.Net.Sockets;
+using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Models;
 
@@ -10,20 +11,20 @@ public class GetCommand : ICommand
 
     public bool IsWriteCommand => false;
 
-    public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
+    public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
     {
         var targetKey = cache.Keys.FirstOrDefault(k => k.Key == args[1]);
         if (targetKey == null)
         {
-            return RedisConstants.NullBulkString;
+            return Task.FromResult(RedisConstants.NullBulkString);
         }
 
         if (targetKey.IsExpired)
         {
             cache.Remove(targetKey);
-            return RedisConstants.NullBulkString;
+            return Task.FromResult(RedisConstants.NullBulkString);
         }
 
-        return RESPFormatHelper.FormatBulkString(cache[targetKey].AsString());
+        return Task.FromResult(RESPFormatHelper.FormatBulkString(cache[targetKey].AsString()));
     }
 }
