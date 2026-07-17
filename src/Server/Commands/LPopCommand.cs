@@ -21,7 +21,6 @@ namespace MiniRedis.Commands
                 return hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString;
             }
 
-
             List<string>? valueList;
             try
             {
