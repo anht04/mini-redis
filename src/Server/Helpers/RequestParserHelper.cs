@@ -1,4 +1,4 @@
-﻿using Common;
+﻿using Common.Constants;
 
 namespace MiniRedis.Helpers
 {

@@ -19,7 +19,7 @@ namespace MiniRedis.Commands
             {
                 return RESPFormatHelper.FormatArray(value: null);
             }
-
+         
             var parsedValue = value.AsList();
             var normalizedStartIndex = ConvertToPositiveIndex(parsedValue, rawIndex: int.Parse(args[2]));
             var normalizedEndIndex = ConvertToPositiveIndex(parsedValue, rawIndex: int.Parse(args[3]));

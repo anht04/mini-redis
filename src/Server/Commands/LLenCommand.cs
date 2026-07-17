@@ -12,12 +12,21 @@ namespace MiniRedis.Commands
         public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
-            if (cache.TryGetValue(cacheKey, out var value) && !value.IsList)
+
+            if (!cache.TryGetValue(cacheKey, out var redisValue))
             {
-                return RESPFormatHelper.FormatErrorString("WRONGTYPE Operation against a key holding the wrong kind of value");
+                return RESPFormatHelper.FormatInteger("0"); 
             }
-            var itemCount = value?.AsList().Count ?? 0;
-            return RESPFormatHelper.FormatInteger(itemCount.ToString());
+
+            try
+            {
+                var itemCount = redisValue.AsList().Count;
+                return RESPFormatHelper.FormatInteger(itemCount.ToString());
+            }
+            catch (InvalidOperationException ex)
+            {
+                return RESPFormatHelper.FormatErrorString(ex.Message);
+            }
         }
     }
 }

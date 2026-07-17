@@ -1,4 +1,4 @@
-﻿using Common;
+﻿using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Models;
 
@@ -8,34 +8,45 @@ namespace MiniRedis.Commands
     {
         public int Arity => -2;
 
-        public bool IsWriteCommand => throw new NotImplementedException();
+        public bool IsWriteCommand => true;
 
         public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
-            var numberOfPopItem = 1;
-            if (args.Count > 2)
+            bool hasCountArg = args.Count > 2;
+            int requestedPopCount = hasCountArg ? int.Parse(args[2]) : 1;
+
+            if (!cache.TryGetValue(cacheKey, out var redisValue))
             {
-                numberOfPopItem = int.Parse(args[2]);
+                return hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString;
             }
-            if (cache.TryGetValue(cacheKey, out var value) && !value.IsList)
+
+
+            List<string>? valueList;
+            try
             {
-                return RESPFormatHelper.FormatErrorString("WRONGTYPE Operation against a key holding the wrong kind of value");
+                valueList = redisValue.AsList();
             }
-            var parsedValue = value?.AsList();
-            if (parsedValue is null || parsedValue.Count == 0)
+            catch (Exception)
             {
-                return RedisConstants.NullBulkString;
+                return RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation);
             }
-            var result = new List<string>();
-            for (int i = 0; i < numberOfPopItem; i++)
+
+            if (valueList.Count == 0)
             {
-                result.Add(parsedValue[i]);
+                return hasCountArg ? RedisConstants.NullArray : RedisConstants.NullBulkString;
             }
-            parsedValue.RemoveRange(0, numberOfPopItem);
-            return result.Count > 1
-                ? RESPFormatHelper.FormatArray(result)
-                : RESPFormatHelper.FormatBulkString(result.First());
+
+            int actualPopCount = Math.Min(requestedPopCount, valueList.Count);
+            var poppedItems = valueList.GetRange(0, actualPopCount);
+            valueList.RemoveRange(0, actualPopCount);
+
+            if (!hasCountArg)
+            {
+                return RESPFormatHelper.FormatBulkString(poppedItems[0]);
+            }
+
+            return RESPFormatHelper.FormatArray(poppedItems);
         }
     }
 }

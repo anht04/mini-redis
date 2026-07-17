@@ -1,4 +1,5 @@
-﻿using Common.Helpers;
+﻿using Common.Constants;
+using Common.Helpers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands
@@ -7,29 +8,34 @@ namespace MiniRedis.Commands
     {
         public int Arity => -3;
 
-        public bool IsWriteCommand => throw new NotImplementedException();
+        public bool IsWriteCommand => true;
 
         public string Execute(List<string> args, Dictionary<RedisEntry, RedisValue> cache)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
-            var insertValues = args[2..];
+
+            var insertValues = args.GetRange(2, args.Count - 2);
             insertValues.Reverse();
 
-            cache.TryGetValue(cacheKey, out var value);
-
-            if (value == null)
+            if (!cache.TryGetValue(cacheKey, out var value))
             {
                 cache.Add(cacheKey, new RedisValue(insertValues));
-                return RESPFormatHelper.FormatInteger(insertValues.Count.ToString());
-            }
-            if (!value.IsList)
-            {
-                return RESPFormatHelper.FormatErrorString("WRONGTYPE Operation against a key holding the wrong kind of value");
+                return RESPFormatHelper.FormatInteger(insertValues.Count);
             }
 
-            var parsedValue = value.AsList();
-            parsedValue.InsertRange(0, insertValues);
-            return RESPFormatHelper.FormatInteger(parsedValue.Count.ToString());
+            List<string>? valueList;
+            try
+            {
+                valueList = value.AsList();
+            }
+            catch (Exception)
+            {
+                return RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation);
+            }
+
+            valueList.InsertRange(0, insertValues);
+
+            return RESPFormatHelper.FormatInteger(valueList.Count);
         }
     }
 }

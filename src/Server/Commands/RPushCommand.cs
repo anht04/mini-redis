@@ -1,5 +1,5 @@
-﻿using Common.Helpers;
-using MiniRedis.Enums;
+﻿using Common.Constants;
+using Common.Helpers;
 using MiniRedis.Models;
 
 namespace MiniRedis.Commands
@@ -18,20 +18,21 @@ namespace MiniRedis.Commands
 
             if (cache.TryGetValue(key, out var value))
             {
-                if(!value.IsList)
+                List<string>? parsedValue;
+                try
                 {
-                    return RESPFormatHelper.FormatErrorString($"Duplicate key: {collectionKey}");
+                    parsedValue = value.AsList();
                 }
-
-                var parsedValue = value.AsList();
+                catch (Exception)
+                {
+                    return RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation);
+                }
                 parsedValue.AddRange(newValues);
-                return RESPFormatHelper.FormatInteger(parsedValue.Count.ToString());
+                return RESPFormatHelper.FormatInteger(parsedValue.Count);
             }
-            else
-            {
-                cache.Add(key, new RedisValue([..newValues]));
-                return RESPFormatHelper.FormatInteger(newValues.Count.ToString());
-            }
+
+            cache.Add(key, new RedisValue(newValues));
+            return RESPFormatHelper.FormatInteger(newValues.Count);
         }
     }
 }

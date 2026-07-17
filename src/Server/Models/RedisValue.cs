@@ -24,13 +24,19 @@ namespace MiniRedis.Models
 
         public string AsString()
         {
-            if (!IsString) throw new InvalidOperationException("Key holds the wrong kind of value");
+            if (!IsString)
+            {
+                throw new InvalidOperationException("Key holds the wrong kind of value");
+            }
             return (string)_value;
         }
 
         public List<string> AsList()
         {
-            if (!IsList) throw new InvalidOperationException("Key holds the wrong kind of value");
+            if (!IsList)
+            {
+                throw new InvalidOperationException("Key holds the wrong kind of value");
+            }
             return (List<string>)_value;
         }
     }

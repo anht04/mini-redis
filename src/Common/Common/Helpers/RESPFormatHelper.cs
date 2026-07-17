@@ -57,6 +57,11 @@ namespace Common.Helpers
             return $"{RedisConstants.RESP_IntegerPrefix}{value}{RedisConstants.CRLF}";
         }
 
+        public static string FormatInteger(int value)
+        {
+            return $"{RedisConstants.RESP_IntegerPrefix}{value}{RedisConstants.CRLF}";
+        }
+
         public static string FormatErrorString(string value)
         {
             return $"{RedisConstants.RESP_ErrorResponsePrefix}{value}{RedisConstants.CRLF}";
