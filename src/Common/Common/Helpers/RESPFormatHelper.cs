@@ -65,7 +65,7 @@ namespace Common.Helpers
 
         public static string FormatErrorString(string value)
         {
-            return $"{RedisConstants.RESP_ErrorResponsePrefix}{value}{RedisConstants.CRLF}";
+            return $"{RedisConstants.RESP_NullResponseCode}{value}{RedisConstants.CRLF}";
         }
 
         private static string FormatArrayLength(int length)

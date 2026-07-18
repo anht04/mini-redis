@@ -16,7 +16,7 @@ namespace MiniRedis.Commands
         {
             var entryDateTimeUtc = DateTimeOffset.UtcNow;
             var cacheKey = new RedisEntry { Key = args[1] };
-            var hasValidTimeoutArg = int.TryParse(args[2], out var timeoutInSecondsArg);
+            var hasValidTimeoutArg = float.TryParse(args[2], out var timeoutInSecondsArg);
             var currentClient = new SubscribedClient
             {
                 Socket = client,
@@ -46,7 +46,7 @@ namespace MiniRedis.Commands
             BlockingManager.Subscribe(cacheKey.Key, currentClient);
 
             var delayMilliseconds = currentClient.TimeoutInSeconds is > 0
-                ? currentClient.TimeoutInSeconds.Value * 1000
+                ? (int)(currentClient.TimeoutInSeconds.Value * 1000)
                 : Timeout.Infinite;
             var timeoutDelayTask = Task.Delay(delayMilliseconds);
             var completedTask = await Task.WhenAny(currentClient.SubscribedTo.Task, timeoutDelayTask);
