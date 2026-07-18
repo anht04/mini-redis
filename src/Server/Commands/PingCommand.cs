@@ -6,7 +6,7 @@ namespace MiniRedis.Commands
 {
     internal class PingCommand : ICommand
     {
-        public int Arity => throw new NotImplementedException();
+        public int Arity => 0;
 
         public bool IsWriteCommand => false;
 

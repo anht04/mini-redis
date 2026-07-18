@@ -1,24 +1,26 @@
-﻿namespace MiniRedis.Commands.Factories;
+﻿using MiniRedis.Constants;
+
+namespace MiniRedis.Commands.Factories;
 
 public static class CommandFactory
 {
-    private static readonly Dictionary<string, ICommand> _commands = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, ICommand> Commands = new(StringComparer.OrdinalIgnoreCase)
     {
-        { "PING", new PingCommand() },
-        { "ECHO", new EchoCommand() },
-        { "GET", new GetCommand() },
-        { "SET", new SetCommand() },
-        { "RPUSH", new RPushCommand() },
-        { "LPUSH", new LPushCommand() },
-        { "LRANGE", new LRangeCommand() },
-        { "LLEN", new LLenCommand() },
-        { "LPOP", new LPopCommand() },
-        { "BLPOP", new BLPopCommand() },
+        { CommandConstants.PING, new PingCommand() },
+        { CommandConstants.ECHO, new EchoCommand() },
+        { CommandConstants.GET, new GetCommand() },
+        { CommandConstants.SET, new SetCommand() },
+        { CommandConstants.RPUSH, new RPushCommand() },
+        { CommandConstants.LPUSH, new LPushCommand() },
+        { CommandConstants.LRANGE, new LRangeCommand() },
+        { CommandConstants.LLEN, new LLenCommand() },
+        { CommandConstants.LPOP, new LPopCommand() },
+        { CommandConstants.BLPOP, new BLPopCommand() },
     };
 
     public static ICommand? GetCommand(string commandName)
     {
-        _commands.TryGetValue(commandName, out var command);
+        Commands.TryGetValue(commandName, out var command);
         return command;
     }
 }
