@@ -51,7 +51,7 @@ namespace MiniRedis.Commands
             }
             catch (InvalidOperationException)
             {
-                return Task.FromResult(RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation));
+                return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.WrongTypeOperation));
             }
 
             valueList.InsertRange(0, values);

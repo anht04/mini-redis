@@ -26,7 +26,7 @@ namespace MiniRedis.Commands
             }
             catch (InvalidOperationException ex)
             {
-                return Task.FromResult(RESPFormatHelper.FormatErrorString(ex.Message));
+                return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(ex.Message));
             }
         }
     }

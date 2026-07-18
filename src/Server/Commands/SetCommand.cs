@@ -14,7 +14,7 @@ public class SetCommand : ICommand
     {
         if (args.Count < 3)
         {
-            return Task.FromResult(RESPFormatHelper.FormatErrorString("ERR wrong number of arguments for 'set' command"));
+            return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString("ERR wrong number of arguments for 'set' command"));
         }
         
         var key = args[1];

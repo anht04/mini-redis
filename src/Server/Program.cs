@@ -45,7 +45,7 @@ async Task HandleClientAsync(Socket client)
         }
         else
         {
-            response = RESPFormatHelper.FormatErrorString("Unknown command: " + commandName);
+            response = RESPFormatHelper.FormatSimpleErrorString("Unknown command: " + commandName);
         }
 
         await client.SendAsync(Encoding.UTF8.GetBytes(response));

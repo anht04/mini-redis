@@ -29,7 +29,7 @@ namespace MiniRedis.Commands
             }
             catch (Exception)
             {
-                return Task.FromResult(RESPFormatHelper.FormatErrorString(RedisErrorMessages.WrongTypeOperation));
+                return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.WrongTypeOperation));
             }
 
             if (valueList.Count == 0)

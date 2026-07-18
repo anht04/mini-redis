@@ -16,7 +16,17 @@ public class XAddCommand : ICommand
         var streamDataEntryId = args[2];
         var rawStreamDataValues = args[3..];
 
-        var parsedStreamDataValues=  BuildRedisValuesFromArgs(rawStreamDataValues);
+        if (!RedisStreamData.TryParseStreamDataId(streamDataEntryId, out var time, out var sequence))
+        {
+            return await Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.XAddStreamDataIdSmallerThanTopItem));
+        }
+
+        if (time == 0 && sequence == 0)
+        {
+            return  await Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.XAddStreamDataIdNotGreaterThan0));
+        }
+
+        var parsedStreamDataValues = BuildRedisValuesFromArgs(rawStreamDataValues);
         var redisStreamData = new RedisStreamData(streamDataEntryId, parsedStreamDataValues);
 
         if (!cache.TryGetValue(streamEntryKey, out var value))
@@ -35,9 +45,20 @@ public class XAddCommand : ICommand
         {
             return await Task.FromResult(RedisErrorMessages.WrongTypeOperation);
         }
-        
-        redisStream.AddDataRange(streamEntryKey.Key, [redisStreamData]);
-        return  await Task.FromResult(RESPFormatHelper.FormatBulkString(streamDataEntryId));
+
+        var lastestStreamDataId = redisStream.GetLastestDataIdByStreamKey(streamEntryKey.Key);
+        if (lastestStreamDataId != null)
+        {
+            var latestStreamDataIdMetadata = RedisStreamData.GetMetadataFromKey(lastestStreamDataId);
+            if (time < latestStreamDataIdMetadata.TimeStamp ||
+                (time == latestStreamDataIdMetadata.TimeStamp && sequence <= latestStreamDataIdMetadata.Sequence))
+            {
+                return await Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.XAddStreamDataIdSmallerThanTopItem));
+            }
+        }
+
+        redisStream.AddDataRange(streamEntryKey.Key, streamDataEntryId, parsedStreamDataValues);
+        return await Task.FromResult(RESPFormatHelper.FormatBulkString(streamDataEntryId));
     }
 
     private static List<RedisStreamDataValue> BuildRedisValuesFromArgs(List<string> values)
@@ -47,6 +68,7 @@ public class XAddCommand : ICommand
         {
             result.Add(new RedisStreamDataValue(values[i], values[i + 1]));
         }
+
         return result;
     }
 }
