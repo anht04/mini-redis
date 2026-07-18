@@ -17,10 +17,17 @@ namespace MiniRedis.Models
         {
             DataType = RedisDataType.List;
             _value = value;
+        }        
+        
+        public RedisValue(RedisStream value)
+        {
+            DataType = RedisDataType.Stream;
+            _value = value;
         }
 
-        public bool IsString => DataType == RedisDataType.String;
-        public bool IsList => DataType == RedisDataType.List;
+        private bool IsString => DataType == RedisDataType.String;
+        private bool IsList => DataType == RedisDataType.List;
+        private bool IsStream => DataType == RedisDataType.Stream;
 
         public string AsString()
         {
@@ -38,6 +45,15 @@ namespace MiniRedis.Models
                 throw new InvalidOperationException("Key holds the wrong kind of value");
             }
             return (List<string>)_value;
+        }
+
+        public RedisStream AsStream()
+        {
+            if (!IsStream)
+            {
+                throw new InvalidOperationException("Key holds the wrong kind of value");
+            }
+            return (RedisStream)_value;
         }
     }
 }
