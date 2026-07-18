@@ -16,6 +16,7 @@ public static class CommandFactory
         { CommandConstants.LLEN, new LLenCommand() },
         { CommandConstants.LPOP, new LPopCommand() },
         { CommandConstants.BLPOP, new BLPopCommand() },
+        { CommandConstants.TYPE, new TypeCommand() },
     };
 
     public static ICommand? GetCommand(string commandName)
