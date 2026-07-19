@@ -1,4 +1,4 @@
-﻿namespace MiniRedis.Models;
+﻿namespace MiniRedis.Models.GlobalCache;
 
 public record RedisEntry
 {

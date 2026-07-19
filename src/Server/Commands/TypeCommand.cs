@@ -1,9 +1,9 @@
 ﻿using System.Net.Sockets;
 using Common.Constants;
 using Common.Helpers;
-using MiniRedis.Commands.Extensions;
 using MiniRedis.Enums;
-using MiniRedis.Models;
+using MiniRedis.Extensions;
+using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands;
 

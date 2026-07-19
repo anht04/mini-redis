@@ -1,6 +1,8 @@
-﻿using MiniRedis.Enums;
+﻿using Common.Constants;
+using MiniRedis.Enums;
+using MiniRedis.Models.RedisStream;
 
-namespace MiniRedis.Models
+namespace MiniRedis.Models.GlobalCache
 {
     public class RedisValue
     {
@@ -19,7 +21,7 @@ namespace MiniRedis.Models
             _value = value;
         }        
         
-        public RedisValue(RedisStream value)
+        public RedisValue(RedisStreamData value)
         {
             DataType = RedisDataType.Stream;
             _value = value;
@@ -33,7 +35,7 @@ namespace MiniRedis.Models
         {
             if (!IsString)
             {
-                throw new InvalidOperationException("Key holds the wrong kind of value");
+                throw new InvalidOperationException(RedisErrorMessages.WrongTypeOperation);
             }
             return (string)_value;
         }
@@ -42,18 +44,18 @@ namespace MiniRedis.Models
         {
             if (!IsList)
             {
-                throw new InvalidOperationException("Key holds the wrong kind of value");
+                throw new InvalidOperationException(RedisErrorMessages.WrongTypeOperation);
             }
             return (List<string>)_value;
         }
 
-        public RedisStream AsStream()
+        public RedisStreamData AsStream()
         {
             if (!IsStream)
             {
-                throw new InvalidOperationException("Key holds the wrong kind of value");
+                throw new InvalidOperationException(RedisErrorMessages.WrongTypeOperation);
             }
-            return (RedisStream)_value;
+            return (RedisStreamData)_value;
         }
     }
 }

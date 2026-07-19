@@ -4,7 +4,7 @@ using System.Text;
 using Common.Helpers;
 using MiniRedis.Commands.Factories;
 using MiniRedis.Helpers;
-using MiniRedis.Models;
+using MiniRedis.Models.GlobalCache;
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 Console.WriteLine("Logs from your program will appear here!");
@@ -41,7 +41,15 @@ async Task HandleClientAsync(Socket client)
         var command = CommandFactory.GetCommand(commandName);
         if (command != null)
         {
-            response = await command.ExecuteAsync(parsedArgs, _cache, client);
+            try
+            {
+                response = await command.ExecuteAsync(parsedArgs, _cache, client);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception occured:" + e);
+                throw;
+            }
         }
         else
         {
