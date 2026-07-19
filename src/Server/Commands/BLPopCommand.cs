@@ -3,6 +3,7 @@ using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Commands.AsyncManagers;
 using MiniRedis.Models;
+using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
 {

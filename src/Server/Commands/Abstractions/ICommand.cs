@@ -1,5 +1,5 @@
 ﻿using System.Net.Sockets;
-using MiniRedis.Models;
+using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands.Abstractions
 {

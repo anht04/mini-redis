@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
 
-namespace MiniRedis.Commands.Extensions;
+namespace MiniRedis.Extensions;
 
 public static class EnumExtensions
 {

@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 using Common.Helpers;
-using MiniRedis.Models;
+using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
 {
