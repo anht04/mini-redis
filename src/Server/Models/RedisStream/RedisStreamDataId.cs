@@ -68,7 +68,30 @@ public record RedisStreamDataId
         return true;
     }
 
-    public static bool IsGreaterThan(RedisStreamDataId newId, RedisStreamDataId? existingId)
+    public static void ValidateDataId(StreamDataIdGenerationBehaviour idGenerationBehaviour, RedisStreamDataId newDataId, RedisStreamData streamData)
+    {
+        if (idGenerationBehaviour != StreamDataIdGenerationBehaviour.Manual)
+        {
+            return;
+        }
+
+        if (!IsGreaterThan(newDataId, streamData.GetCurrentLargestId()))
+        {
+            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdSmallerThanTopItem);
+        }
+    }
+
+    public RedisStreamDataId GetNextId(StreamDataIdGenerationBehaviour idGenerationBehaviour) => new(Timestamp, Sequence + 1, idGenerationBehaviour);
+    public static RedisStreamDataId GetNextId(RedisStreamDataId currentId, StreamDataIdGenerationBehaviour idGenerationBehaviour) => new(currentId.Timestamp, currentId.Sequence + 1, idGenerationBehaviour);
+
+    public override string ToString()
+    {
+        var timeStamp = Timestamp.ToString();
+        var sequence = Sequence.ToString();
+        return $"{timeStamp}-{sequence}";
+    }
+
+    private static bool IsGreaterThan(RedisStreamDataId newId, RedisStreamDataId? existingId)
     {
         if (existingId is null)
         {
@@ -79,13 +102,4 @@ public record RedisStreamDataId
                (newId.Timestamp == existingId.Timestamp && newId.Sequence > existingId.Sequence);
     }
 
-    public override string ToString()
-    {
-        var timeStamp = Timestamp.ToString();
-        var sequence = Sequence.ToString();
-        return $"{timeStamp}-{sequence}";
-    }
-
-    public RedisStreamDataId GetNextId(StreamDataIdGenerationBehaviour idGenerationBehaviour) => new(Timestamp, Sequence + 1, idGenerationBehaviour);
-    public static RedisStreamDataId GetNextId(RedisStreamDataId currentId, StreamDataIdGenerationBehaviour idGenerationBehaviour) => new(currentId.Timestamp, currentId.Sequence + 1, idGenerationBehaviour);
 }

@@ -24,7 +24,7 @@ public class RedisStreamData
         return streamData;
     }
     
-    public RedisStreamDataId AddRangeToNewData(RedisStreamDataId baseNewDataId, List<RedisStreamDataValue> streamDataValues, StreamDataIdGenerationBehaviour idGenerationBehaviour)
+    public RedisStreamDataId AddRange(RedisStreamDataId baseNewDataId, List<RedisStreamDataValue> streamDataValues, StreamDataIdGenerationBehaviour idGenerationBehaviour)
     {
         if (Data.TryGetValue(baseNewDataId, out var existingDataValues))
         {

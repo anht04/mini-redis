@@ -1,50 +1,45 @@
-﻿using System.Net.Sockets;
-using Common.Helpers;
+﻿using Common.Helpers;
+using MiniRedis.Data;
 using MiniRedis.Models.GlobalCache;
-
-namespace MiniRedis.Commands;
+using System.Net.Sockets;
 
 public class SetCommand : ICommand
 {
-    public int Arity => throw new NotImplementedException();
+    public int Arity => -3;
 
     public bool IsWriteCommand => true;
 
-    public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
+    public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
     {
         if (args.Count < 3)
         {
             return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString("ERR wrong number of arguments for 'set' command"));
         }
-        
-        var key = args[1];
-        var rawValue = args[2];
 
-        DateTimeOffset? expireAt = null;
-        
-        if (args.Count > 4)
+        var key = new RedisEntry { Key = args[1] };
+        var value = args[2];
+
+        long? expireAtMs = null;
+
+        if (args.Count >= 5)
         {
-            if(!int.TryParse(args[4], out var expireDuration))
+            if (!int.TryParse(args[4], out var expireDuration))
             {
-                return Task.FromResult(RESPFormatHelper.FormatSimpleString("ERR"));
+                return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString("ERR value is not an integer or out of range"));
             }
 
-            expireAt = args[3].ToUpper() switch
+            expireAtMs = args[3].ToUpper() switch
             {
-                "PX" => DateTimeOffset.UtcNow.AddMilliseconds(expireDuration),
-                "EX" => DateTimeOffset.UtcNow.AddSeconds(expireDuration),
+                "PX" => DateTimeOffset.UtcNow.AddMilliseconds(expireDuration).ToUnixTimeMilliseconds(),
+                "EX" => DateTimeOffset.UtcNow.AddSeconds(expireDuration).ToUnixTimeMilliseconds(),
                 _ => null
             };
         }
 
-        var cacheEntry = new RedisEntry
-        {
-            Key = key,
-            ExpireAtMs = expireAt?.ToUnixTimeMilliseconds()
-        };
-        
-        return Task.FromResult(cache.TryAdd(cacheEntry, new RedisValue(rawValue))
+        var isSuccess = database.Set(key, value, expireAtMs);
+
+        return Task.FromResult(isSuccess
             ? RESPFormatHelper.FormatSimpleString("OK")
-            : RESPFormatHelper.FormatSimpleString("ERR"));
+            : RESPFormatHelper.FormatSimpleErrorString("ERR"));
     }
 }

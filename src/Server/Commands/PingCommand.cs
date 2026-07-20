@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 using Common.Helpers;
-using MiniRedis.Models.GlobalCache;
+using MiniRedis.Data;
 
 namespace MiniRedis.Commands
 {
@@ -10,7 +10,7 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => false;
 
-        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
+        public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
             return Task.FromResult(RESPFormatHelper.FormatSimpleString("PONG"));
         }
