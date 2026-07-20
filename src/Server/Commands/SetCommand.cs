@@ -16,7 +16,7 @@ public class SetCommand : ICommand
             return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString("ERR wrong number of arguments for 'set' command"));
         }
 
-        var key = new RedisEntry { Key = args[1] };
+        var key = args[1];
         var value = args[2];
 
         long? expireAtMs = null;
@@ -34,9 +34,16 @@ public class SetCommand : ICommand
                 "EX" => DateTimeOffset.UtcNow.AddSeconds(expireDuration).ToUnixTimeMilliseconds(),
                 _ => null
             };
+
         }
 
-        var isSuccess = database.Set(key, value, expireAtMs);
+        var cacheKey = new RedisEntry
+        {
+            Key = key,
+            ExpireAtMs = expireAtMs
+        };
+
+        var isSuccess = database.Set(cacheKey, value);
 
         return Task.FromResult(isSuccess
             ? RESPFormatHelper.FormatSimpleString("OK")

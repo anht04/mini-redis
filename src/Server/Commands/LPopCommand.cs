@@ -13,7 +13,7 @@ namespace MiniRedis.Commands
         public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
-            bool hasCountArg = args.Count > 1;
+            bool hasCountArg = args.Count > 2;
             int requestedPopCount = hasCountArg ? int.Parse(args[2]) : 1;
 
             return Task.FromResult(database.LPop(cacheKey, requestedPopCount));
