@@ -1,5 +1,5 @@
 ﻿using System.Net.Sockets;
-using Common.Helpers;
+using MiniRedis.Data;
 using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
@@ -10,42 +10,13 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => false;
 
-        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
+        public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
-            var cacheKey = args[1];
+            var cacheKey = new RedisEntry { Key = args[1] };
+            var fromIndex = int.Parse(args[2]);
+            var toIndex = int.Parse(args[3]);
 
-            cache.TryGetValue(new RedisEntry { Key = cacheKey }, out var value);
-
-            if (value is null)
-            {
-                return Task.FromResult(RESPFormatHelper.FormatArray(value: null));
-            }
-         
-            var parsedValue = value.AsList();
-            var normalizedStartIndex = ConvertToPositiveIndex(parsedValue, rawIndex: int.Parse(args[2]));
-            var normalizedEndIndex = ConvertToPositiveIndex(parsedValue, rawIndex: int.Parse(args[3]));
-
-            if (normalizedStartIndex >= parsedValue.Count)
-            {
-                return Task.FromResult(RESPFormatHelper.FormatArray(value: null));
-            }
-
-            if (normalizedEndIndex >= parsedValue.Count)
-            {
-                normalizedEndIndex = parsedValue.Count - 1;
-            }
-
-            return Task.FromResult(RESPFormatHelper.FormatArray(parsedValue.GetRange(normalizedStartIndex, normalizedEndIndex - normalizedStartIndex + 1)));
-        }
-
-        private static int ConvertToPositiveIndex(List<string> collection, int rawIndex)
-        {
-            if (rawIndex < 0)
-            {
-                var result = collection.Count + rawIndex;
-                return result >= 0 ? result : 0;
-            }
-            return rawIndex;
+            return Task.FromResult(database.LRange(cacheKey, fromIndex, toIndex));
         }
     }
 }

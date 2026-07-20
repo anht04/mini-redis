@@ -1,5 +1,5 @@
 ﻿using System.Net.Sockets;
-using Common.Helpers;
+using MiniRedis.Data;
 using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
@@ -10,24 +10,11 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => false;
 
-        public Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
+        public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
 
-            if (!cache.TryGetValue(cacheKey, out var redisValue))
-            {
-                return Task.FromResult(RESPFormatHelper.FormatInteger("0")); 
-            }
-
-            try
-            {
-                var itemCount = redisValue.AsList().Count;
-                return Task.FromResult(RESPFormatHelper.FormatInteger(itemCount.ToString()));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(ex.Message));
-            }
+            return Task.FromResult(database.LLen(cacheKey));
         }
     }
 }

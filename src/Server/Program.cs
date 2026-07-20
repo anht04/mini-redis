@@ -3,13 +3,13 @@ using System.Net.Sockets;
 using System.Text;
 using Common.Helpers;
 using MiniRedis.Commands.Factories;
+using MiniRedis.Data;
 using MiniRedis.Helpers;
-using MiniRedis.Models.GlobalCache;
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 Console.WriteLine("Logs from your program will appear here!");
 
-Dictionary<RedisEntry, RedisValue> _cache = new();
+RedisDatabase database = new RedisDatabase();
 
 var server = new TcpListener(IPAddress.Any, 6379);
 server.Start();
@@ -43,12 +43,12 @@ async Task HandleClientAsync(Socket client)
         {
             try
             {
-                response = await command.ExecuteAsync(parsedArgs, _cache, client);
+                response = await command.ExecuteAsync(parsedArgs, database, client);
             }
             catch (Exception e)
             {
                 Console.WriteLine("Exception occured:" + e);
-                throw;
+                response = RESPFormatHelper.FormatSimpleErrorString("Uncatched error during processing request: " + e.Message);
             }
         }
         else

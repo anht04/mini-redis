@@ -1,6 +1,7 @@
 ﻿using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Constants;
+using MiniRedis.Data;
 using MiniRedis.Enums;
 using MiniRedis.Models.GlobalCache;
 using MiniRedis.Models.RedisStream;
@@ -13,48 +14,15 @@ public class XAddCommand : ICommand
     public int Arity => 5;
     public bool IsWriteCommand => true;
 
-    public async Task<string> ExecuteAsync(List<string> args, Dictionary<RedisEntry, RedisValue> cache, Socket client)
+    public async Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
     {
         var streamEntryKey = new RedisEntry { Key = args[1] };
-        var streamDataIdArg = args[2];
+        var streamDataId = args[2];
         var streamDataValuesArg = args[3..];
 
         var parsedStreamDataValues = BuildRedisValuesFromArgs(streamDataValuesArg);
 
-        if (!cache.TryGetValue(streamEntryKey, out var value))
-        {
-            RedisStreamDataId dataId;
-            try
-            {
-                dataId = AddDataRange(streamEntryKey.Key, streamDataIdArg, cache, parsedStreamDataValues);
-            }
-            catch (Exception e)
-            {
-                return await Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(e.Message));
-            }
-            return await Task.FromResult(RESPFormatHelper.FormatBulkString(dataId.ToString()));
-        }
-
-        RedisStreamData redisStream;
-        try
-        {
-            redisStream = value.AsStream();
-        }
-        catch (InvalidOperationException)
-        {
-            return await Task.FromResult(RedisErrorMessages.WrongTypeOperation);
-        }
-
-        RedisStreamDataId addedDataId;
-        try
-        {
-            addedDataId = AddDataRange(streamEntryKey.Key, streamDataIdArg, cache, parsedStreamDataValues);
-        }
-        catch (Exception e)
-        {
-            return await Task.FromResult(RESPFormatHelper.FormatSimpleErrorString(e.Message));
-        }
-        return await Task.FromResult(RESPFormatHelper.FormatBulkString(addedDataId.ToString()));
+        return await Task.FromResult(database.XAdd(streamEntryKey, streamDataId, parsedStreamDataValues));
     }
 
     private static List<RedisStreamDataValue> BuildRedisValuesFromArgs(List<string> values)
@@ -68,7 +36,7 @@ public class XAddCommand : ICommand
         return result;
     }
 
-    public RedisStreamDataId AddDataRange(string streamId, string dataId, Dictionary<RedisEntry, RedisValue> cache, List<RedisStreamDataValue> streamDataValues)
+    public static RedisStreamDataId AddDataRangeToCache(string streamId, string dataId, List<RedisStreamDataValue> streamDataValues, Dictionary<RedisEntry, RedisValue> cache)
     {
         var newStreamData = CreateNewStreamData(streamId, dataId, streamDataValues, cache, out var idGenerationBehaviour);
         var newDataId = newStreamData.GetCurrentLargestId()!;
@@ -79,53 +47,29 @@ public class XAddCommand : ICommand
         if (!cache.TryGetValue(cacheKey, out var streamData))
         {
             cache.Add(cacheKey, cacheValue);
-            ValidateDataIdForNewStream(idGenerationBehaviour, newDataId);
             return newDataId;
         }
 
         var parsedStreamData = streamData.AsStream();
-        ValidateDataId(idGenerationBehaviour, newDataId, parsedStreamData);
-        return parsedStreamData.AddRangeToNewData(newDataId, streamDataValues, idGenerationBehaviour);
+        RedisStreamDataId.ValidateDataId(idGenerationBehaviour, newDataId, parsedStreamData);
+        return parsedStreamData.AddRange(newDataId, streamDataValues, idGenerationBehaviour);
     }
 
-    private static void ValidateDataIdForNewStream(StreamDataIdGenerationBehaviour idGenerationBehaviour,
-        RedisStreamDataId newDataId)
-    {
-        if (idGenerationBehaviour != StreamDataIdGenerationBehaviour.Manual)
-        {
-            return;
-        }
-    }
-
-    private static void ValidateDataId(StreamDataIdGenerationBehaviour idGenerationBehaviour,
-        RedisStreamDataId newDataId,
-        RedisStreamData streamData)
-    {
-        if (idGenerationBehaviour != StreamDataIdGenerationBehaviour.Manual)
-        {
-            return;
-        }
-
-        if (!RedisStreamDataId.IsGreaterThan(newDataId, streamData.GetCurrentLargestId()))
-        {
-            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdSmallerThanTopItem);
-        }
-    }
-
-    private RedisStreamData CreateNewStreamData(string streamId, string dataId, List<RedisStreamDataValue> streamDataValues, Dictionary<RedisEntry, RedisValue> cache, out StreamDataIdGenerationBehaviour idGenerationBehaviour)
+    private static RedisStreamData CreateNewStreamData(string streamId, string dataId, List<RedisStreamDataValue> streamDataValues, 
+        Dictionary<RedisEntry, RedisValue> cache, out StreamDataIdGenerationBehaviour idGenerationBehaviour)
     {
         var baseNewDataId = GenerateNewDataId(streamId, dataId, cache, out idGenerationBehaviour);
         return RedisStreamData.Create(baseNewDataId, streamDataValues, idGenerationBehaviour);
     }
 
-    private RedisStreamDataId GenerateNewDataId(string streamId, string dataId, Dictionary<RedisEntry, RedisValue> cache,
+    private static RedisStreamDataId GenerateNewDataId(string streamId, string dataId, Dictionary<RedisEntry, RedisValue> cache,
         out StreamDataIdGenerationBehaviour generationBehaviour)
     {
         var cacheKey = new RedisEntry { Key = streamId };
         if (!RedisStreamDataId.TryParseStreamDataId(dataId, out var timestamp, out var sequence,
                 out var dataIdGenerationBehaviour))
         {
-            throw new InvalidOperationException("Invalid stream data id");
+            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdNotGreaterThan0);
         }
         generationBehaviour = dataIdGenerationBehaviour;
 
