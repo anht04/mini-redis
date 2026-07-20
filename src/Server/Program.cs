@@ -48,7 +48,7 @@ async Task HandleClientAsync(Socket client)
             catch (Exception e)
             {
                 Console.WriteLine("Exception occured:" + e);
-                response = RESPFormatHelper.FormatSimpleErrorString("Uncatched error during processing request: " + e.Message);
+                response = RESPFormatHelper.FormatSimpleErrorString(e.Message);
             }
         }
         else
