@@ -14,4 +14,5 @@ public static class CommandConstants
     public const string BLPOP = "BLPOP";
     public const string TYPE = "TYPE";
     public const string XADD = "XADD";
+    public const string XRANGE = "XRANGE";
 }

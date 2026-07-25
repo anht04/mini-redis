@@ -7,7 +7,7 @@ namespace Common.Helpers
     {
         public static string FormatArray(string? value)
         {
-            if(value is null)
+            if (value is null)
             {
                 return FormatArrayLength(0);
             }
@@ -26,7 +26,7 @@ namespace Common.Helpers
 
         public static string FormatArray(List<string>? values)
         {
-            if(values is null)
+            if (values is null)
             {
                 return FormatArrayLength(0);
             }
@@ -39,6 +39,41 @@ namespace Common.Helpers
                 result.Append(FormatBulkString(value));
             }
 
+            return result.Insert(0, prefix).ToString();
+        }
+
+        public static string FormatArray(List<KeyValuePair<string, List<string>>> values)
+        {
+            if (values.Count == 0)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+            var prefix = FormatArrayLength(values.Count);
+            
+            foreach (var value in values)
+            {
+                result.Append(FormatArray(value));
+            }
+
+            return result.Insert(0, prefix).ToString();
+        }        
+        
+        private static string FormatArray(KeyValuePair<string, List<string>> keyValuePair)
+        {
+            var values = keyValuePair.Value;
+            if (values.Count == 0)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+            var prefix = FormatArrayLength(2);
+            
+            result.Append(FormatBulkString(keyValuePair.Key) + FormatArray(values));
+            
+            
             return result.Insert(0, prefix).ToString();
         }
 
@@ -66,8 +101,8 @@ namespace Common.Helpers
         public static string FormatErrorString()
         {
             return $"{RedisConstants.RESP_NullSimpleStringCode}-1{RedisConstants.CRLF}";
-        }        
-        
+        }
+
         public static string FormatSimpleErrorString(string value)
         {
             return $"{RedisConstants.RESP_NullSimpleStringCode}{value}{RedisConstants.CRLF}";

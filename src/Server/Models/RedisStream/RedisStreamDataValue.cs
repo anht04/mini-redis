@@ -15,4 +15,9 @@ public record RedisStreamDataValue
     {
         return new RedisStreamDataValue(key, value);
     }
+
+    public string[] ToKeyValueStringArray()
+    {
+        return [Key, Value];
+    }
 }

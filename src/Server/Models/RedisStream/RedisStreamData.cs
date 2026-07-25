@@ -5,43 +5,44 @@ namespace MiniRedis.Models.RedisStream;
 
 public class RedisStreamData
 {
-    private Dictionary<RedisStreamDataId, List<RedisStreamDataValue>> Data { get; } = [];
+    private OrderedDictionary<RedisStreamDataId, List<RedisStreamDataValue>> Data { get; } = [];
 
     private RedisStreamData()
     {
     }
 
     public static RedisStreamData Create(RedisStreamDataId baseNewDataId, List<RedisStreamDataValue> streamDataValues,
-        StreamDataIdGenerationBehaviour idGenerationBehaviour)
+        StreamDataIdPattern idPattern)
     {
         var streamData = new RedisStreamData();
         foreach (var streamDataValue in streamDataValues)
         {
             var newDataId = streamData.AddNewData(baseNewDataId, streamDataValue);
-            baseNewDataId = RedisStreamDataId.GetNextId(newDataId, idGenerationBehaviour);
+            baseNewDataId = RedisStreamDataId.GetNextId(newDataId, idPattern);
         }
 
         return streamData;
     }
-    
-    public RedisStreamDataId AddRange(RedisStreamDataId baseNewDataId, List<RedisStreamDataValue> streamDataValues, StreamDataIdGenerationBehaviour idGenerationBehaviour)
+
+    public RedisStreamDataId AddRange(RedisStreamDataId baseNewDataId, List<RedisStreamDataValue> streamDataValues,
+        StreamDataIdPattern idPattern)
     {
         if (Data.TryGetValue(baseNewDataId, out var existingDataValues))
         {
             throw new InvalidOperationException($"Stream Data key {baseNewDataId} already exists");
         }
 
-        RedisStreamDataId latestId = baseNewDataId;
+        var firstId = RedisStreamDataId.Create(baseNewDataId.Timestamp, baseNewDataId.Sequence);
         foreach (var streamDataValue in streamDataValues)
         {
-            latestId = AddNewData(baseNewDataId, streamDataValue);
-            baseNewDataId = RedisStreamDataId.GetNextId(latestId, idGenerationBehaviour);
+            AddNewData(baseNewDataId, streamDataValue);
+            baseNewDataId = RedisStreamDataId.GetNextId(baseNewDataId, idPattern);
         }
 
-        return latestId;
+        return firstId;
     }
-    
-    public RedisStreamDataId AddNewData(RedisStreamDataId dataId, RedisStreamDataValue streamValue)
+
+    private RedisStreamDataId AddNewData(RedisStreamDataId dataId, RedisStreamDataValue streamValue)
     {
         if (Data.TryGetValue(dataId, out var streamDataValues))
         {
@@ -50,6 +51,32 @@ public class RedisStreamData
 
         Data.Add(dataId, [streamValue]);
         return dataId;
+    }
+
+    public List<KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>> GetRange(RedisStreamDataId startId,
+        RedisStreamDataId endId)
+    {
+        var dataInRange = Data
+            .Where(d =>
+                d.Key.Timestamp >= startId.Timestamp && d.Key.Sequence >= startId.Sequence &&
+                d.Key.Timestamp <= endId.Timestamp && d.Key.Sequence <= endId.Sequence)
+            .ToList();
+        
+        return dataInRange;
+    }
+
+    public RedisStreamDataId? GetCurrentSmallestId()
+    {
+        if (Data.Count == 0)
+        {
+            return null;
+        }
+
+        return Data
+            .OrderBy(d => d.Key.Timestamp)
+            .ThenBy(d => d.Key.Sequence)
+            .FirstOrDefault()
+            .Key;
     }
 
     public RedisStreamDataId? GetCurrentLargestId()
@@ -66,7 +93,21 @@ public class RedisStreamData
             .Key;
     }
 
-    public RedisStreamDataId GetNextId(long timeStamp, StreamDataIdGenerationBehaviour idGenerationBehaviour)
+    public RedisStreamDataId? GetCurrentLargestId(long timestamp)
+    {
+        if (Data.Count == 0)
+        {
+            return null;
+        }
+
+        return Data
+            .Where(d => d.Key.Timestamp == timestamp)
+            .OrderByDescending(d => d.Key.Sequence)
+            .FirstOrDefault()
+            .Key;
+    }
+
+    public RedisStreamDataId GetNextId(long timeStamp, StreamDataIdPattern idPattern)
     {
         var matchingData = Data
             .Where(d => d.Key.Timestamp == timeStamp)
@@ -75,7 +116,7 @@ public class RedisStreamData
         if (matchingData.Count == 0)
         {
             return RedisStreamDataId.Create(timeStamp, StreamConstants.DefaultSequenceNumberForNonZeroTimestamp,
-                idGenerationBehaviour);
+                idPattern);
         }
 
         return matchingData
@@ -83,6 +124,6 @@ public class RedisStreamData
             .ThenByDescending(d => d.Key.Sequence)
             .FirstOrDefault()
             .Key
-            .GetNextId(idGenerationBehaviour);
+            .GetNextId(idPattern);
     }
 }

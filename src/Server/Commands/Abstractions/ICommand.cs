@@ -7,6 +7,6 @@ namespace MiniRedis.Commands.Abstractions
     {
         int Arity { get; }
         bool IsWriteCommand { get; }
-        Task<string> ExecuteAsync(List<string> args, RedisDatabase cache, Socket client);
+        Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client);
     }
 }
