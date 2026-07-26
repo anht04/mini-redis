@@ -14,13 +14,21 @@ namespace MiniRedis.Commands
         public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
             var cacheKey = new RedisEntry { Key = args[1] };
-            var startIdOrQuerySymbol = args[2];
-            var endId = args[3];
-            var queryPurpose = startIdOrQuerySymbol.Trim() == "+" || startIdOrQuerySymbol.Trim() == "-" 
-                ? XRangeCommandPurpose.QueryWithSign 
-                : XRangeCommandPurpose.NormalQuery;
+            var startIdOrStartArgument = args[2].Trim();
+            var endIdOrEndArgument = args[3].Trim();
+
+            var queryPurpose = XRangeCommandPurpose.NormalQuery;
+            if (startIdOrStartArgument == "-")
+            {
+                queryPurpose = XRangeCommandPurpose.QueryWithStartArgument;
+            }
+
+            if (endIdOrEndArgument == "+")
+            {
+                queryPurpose = XRangeCommandPurpose.QueryWithEndArgument;
+            }
             
-            return Task.FromResult(database.XRange(cacheKey, startIdOrQuerySymbol, endId, queryPurpose));
+            return Task.FromResult(database.XRange(cacheKey, startIdOrStartArgument, endIdOrEndArgument, queryPurpose));
         }
     }
 }

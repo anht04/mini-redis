@@ -3,5 +3,6 @@
 public enum XRangeCommandPurpose
 {
     NormalQuery,
-    QueryWithSign
+    QueryWithStartArgument,
+    QueryWithEndArgument,
 }

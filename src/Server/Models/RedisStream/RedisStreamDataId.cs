@@ -7,7 +7,7 @@ public record RedisStreamDataId
 {
     public long Timestamp { get; private set; }
     public long Sequence { get; private set; }
-    
+
     private RedisStreamDataId(long timestamp, long sequence, StreamDataIdPattern? idGenerationBehaviour = null)
     {
         if (idGenerationBehaviour == StreamDataIdPattern.FullForm && timestamp == 0 && sequence == 0)
@@ -23,9 +23,8 @@ public record RedisStreamDataId
     {
         return new RedisStreamDataId(timestamp, sequence, idPattern);
     }
- 
-    public static bool TryParseStreamDataId(string input, out long? timestamp, out long? sequenceNumber,
-        out StreamDataIdPattern dataIdPattern)
+
+    public static bool TryParseStreamDataId(string input, out long? timestamp, out long? sequenceNumber, out StreamDataIdPattern dataIdPattern)
     {
         dataIdPattern = StreamDataIdPattern.FullForm;
         timestamp = null;
@@ -64,10 +63,9 @@ public record RedisStreamDataId
         sequenceNumber = sequence;
 
         return true;
-    }    
-    
-    public static bool TryParseXRangeStreamDataId(string input, out long? timestamp, out long? sequenceNumber,
-        out StreamDataIdPattern dataIdPattern)
+    }
+
+    public static bool TryParseXRangeStreamDataId(string input, out long? timestamp, out long? sequenceNumber, out StreamDataIdPattern dataIdPattern)
     {
         dataIdPattern = StreamDataIdPattern.FullForm;
         timestamp = null;
@@ -140,5 +138,4 @@ public record RedisStreamDataId
         return newId.Timestamp > existingId.Timestamp ||
                (newId.Timestamp == existingId.Timestamp && newId.Sequence > existingId.Sequence);
     }
-
 }
