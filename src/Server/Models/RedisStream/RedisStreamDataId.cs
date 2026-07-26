@@ -19,7 +19,7 @@ public record RedisStreamDataId
         Sequence = sequence;
     }
 
-    public static RedisStreamDataId Create(long timestamp, long sequence, StreamDataIdPattern idPattern = StreamDataIdPattern.FullForm)
+    public static RedisStreamDataId Create(long timestamp, long sequence, StreamDataIdPattern idPattern = StreamDataIdPattern.FullyAuto)
     {
         return new RedisStreamDataId(timestamp, sequence, idPattern);
     }

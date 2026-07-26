@@ -62,6 +62,15 @@ public class RedisStreamData
             .ToList();
 
         return dataInRange;
+    }    
+    
+    public List<KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>> GetRangeGreaterThan(RedisStreamDataId? startId)
+    {
+        var dataInRange = Data
+            .Where(d => startId == null || (d.Key.Timestamp >= startId.Timestamp && d.Key.Sequence > startId.Sequence))
+            .ToList();
+
+        return dataInRange;
     }
 
     public RedisStreamDataId? GetCurrentSmallestId()

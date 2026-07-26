@@ -58,7 +58,49 @@ namespace Common.Helpers
             }
 
             return result.Insert(0, prefix).ToString();
-        }        
+        }              
+        
+        public static string FormatArray(string streamId, List<KeyValuePair<string, List<string>>> values)
+        {
+            if (values.Count == 0)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+
+            var wrapperArray = FormatArray((string?)null);
+            var streamIdArray = FormatArray(streamId);
+            var valuesPrefix = FormatArrayLength(values.Count);
+            
+            foreach (var value in values)
+            {
+                result.Append(FormatArray(value));
+            }
+
+            var parsedResult = result.Insert(0, valuesPrefix).ToString();
+            parsedResult = ConcatFormattedArrays(parsedResult, streamIdArray);
+            parsedResult = ConcatFormattedArrays(parsedResult, wrapperArray);
+            
+            return parsedResult;
+        }
+
+        public static string ConcatFormattedArrays(string source, string destination)
+        {
+            var destinationElementCount = destination.Split(RedisConstants.CRLF)[0].Remove(0,1);
+            var parsedDestinationElementCount = int.Parse(destinationElementCount);
+
+            var sb = new StringBuilder();
+            sb.Append(FormatArrayLength(++parsedDestinationElementCount));
+            foreach (var item in destination.Split(RedisConstants.CRLF).Skip(1).Where(d => !string.IsNullOrEmpty(d)))
+            {
+                sb.Append(item);
+                sb.Append(RedisConstants.CRLF);
+            }
+            
+            sb.Append(source);
+            return sb.ToString();
+        }
         
         private static string FormatArray(KeyValuePair<string, List<string>> keyValuePair)
         {
@@ -84,7 +126,7 @@ namespace Common.Helpers
 
         public static string FormatBulkString(string value)
         {
-            int length = value?.Length ?? 0;
+            var length = value?.Length ?? 0;
             return $"{RedisConstants.RESP_BulkStringPrefix}{length}{RedisConstants.CRLF}{value}{RedisConstants.CRLF}";
         }
 
