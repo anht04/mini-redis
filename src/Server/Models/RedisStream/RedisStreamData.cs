@@ -53,12 +53,13 @@ public class RedisStreamData
         return dataId;
     }
 
-    public List<KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>> GetRange(RedisStreamDataId startId,
+    public List<KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>> GetRange(RedisStreamDataId? startId,
         RedisStreamDataId endId)
     {
         var dataInRange = Data
             .Where(d =>
-                d.Key.Timestamp >= startId.Timestamp && d.Key.Sequence >= startId.Sequence &&
+                (startId == null ||
+                (d.Key.Timestamp >= startId.Timestamp && d.Key.Sequence >= startId.Sequence)) &&
                 d.Key.Timestamp <= endId.Timestamp && d.Key.Sequence <= endId.Sequence)
             .ToList();
         
