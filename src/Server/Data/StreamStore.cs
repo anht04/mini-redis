@@ -1,8 +1,10 @@
 using Common.Constants;
 using Common.Results;
+using MiniRedis.Commands.AsyncManagers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Constants;
 using MiniRedis.Enums;
+using MiniRedis.Models;
 using MiniRedis.Models.GlobalCache;
 using MiniRedis.Models.RedisStream;
 
@@ -82,7 +84,7 @@ namespace MiniRedis.Data
                 .ToList();
         }
 
-        public List<XReadStreamResult> XRead(XReadRequest request)
+        public async Task<List<XReadStreamResult>> XReadAsync(XReadRequest request, SubscribedClient currentClient)
         {
             List<XReadStreamResult> results = [];
             foreach (var query in request.Queries)
@@ -92,13 +94,29 @@ namespace MiniRedis.Data
 
                 if (!_cache.TryGetValue(cacheKey, out var value))
                 {
+                    if (request.IsBlockingRequest)
+                    {
+                        BlockingManager.Subscribe(cacheKey.Key, currentClient);
+                        var delayMilliseconds = currentClient.TimeoutInSeconds is > 0
+                            ? (int)currentClient.TimeoutInSeconds
+                            : Timeout.Infinite;
+                        var timeoutDelayTask = Task.Delay(delayMilliseconds);
+                        var completedTask = await Task.WhenAny(currentClient.SubscribedTo.Task, timeoutDelayTask);
+                        if (completedTask == currentClient.SubscribedTo.Task)
+                        {
+                            var item = await currentClient.SubscribedTo.Task;
+                            results.Add(new XReadStreamResult(cacheKey.Key, null)); //TODO FIX THIS TOMORROW
+                        }
+                    }
+                    
+                    
                     results.Add(new XReadStreamResult(cacheKey.Key, null));
                     continue;
                 }
 
                 var streamData = value.AsStream();
 
-                List<StreamDataResult>? result = streamData
+                var result = streamData
                     .GetRangeGreaterThan(startId)
                     .Select(kp =>
                         new StreamDataResult(

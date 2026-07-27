@@ -76,34 +76,6 @@ public class RedisStreamData
         return dataInRange;
     }
 
-    public RedisStreamDataId? GetCurrentSmallestId()
-    {
-        if (Data.Count == 0)
-        {
-            return null;
-        }
-
-        return Data
-            .OrderBy(d => d.Key.Timestamp)
-            .ThenBy(d => d.Key.Sequence)
-            .FirstOrDefault()
-            .Key;
-    }
-
-    public RedisStreamDataId? GetCurrentLargestId()
-    {
-        if (Data.Count == 0)
-        {
-            return null;
-        }
-
-        return Data
-            .OrderByDescending(d => d.Key.Timestamp)
-            .ThenByDescending(d => d.Key.Sequence)
-            .FirstOrDefault()
-            .Key;
-    }
-
     public RedisStreamDataId? GetCurrentLargestId(long timestamp)
     {
         if (Data.Count == 0)
@@ -135,5 +107,19 @@ public class RedisStreamData
             .FirstOrDefault()
             .Key
             .GetNextId();
+    }
+    
+    private RedisStreamDataId? GetCurrentLargestId()
+    {
+        if (Data.Count == 0)
+        {
+            return null;
+        }
+
+        return Data
+            .OrderByDescending(d => d.Key.Timestamp)
+            .ThenByDescending(d => d.Key.Sequence)
+            .FirstOrDefault()
+            .Key;
     }
 }

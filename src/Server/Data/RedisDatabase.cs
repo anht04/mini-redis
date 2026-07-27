@@ -93,7 +93,7 @@ namespace MiniRedis.Data
         public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) =>
             _streamStore.XRange(cacheKey, startId, endId, purpose);
 
-        public List<XReadStreamResult> XRead(XReadRequest request) =>
-            _streamStore.XRead(request);
+        public async Task<List<XReadStreamResult>> XRead(XReadRequest request, SubscribedClient client) =>
+            await _streamStore.XReadAsync(request, client);
     }
 }
