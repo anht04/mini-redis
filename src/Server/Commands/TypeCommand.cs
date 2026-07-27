@@ -1,5 +1,5 @@
-﻿using MiniRedis.Data;
-using MiniRedis.Models.GlobalCache;
+﻿using MiniRedis.Commands.Requests;
+using MiniRedis.Data;
 using System.Net.Sockets;
 
 namespace MiniRedis.Commands;
@@ -10,8 +10,8 @@ public class TypeCommand : ICommand
     public bool IsWriteCommand => false;
     public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
     {
-        var cacheKey = new RedisEntry { Key = args[1] };
+        var request = SingleKeyRequest.Create(args);
 
-        return Task.FromResult(database.Type(cacheKey));
+        return Task.FromResult(database.Type(request.Key));
     }
 }

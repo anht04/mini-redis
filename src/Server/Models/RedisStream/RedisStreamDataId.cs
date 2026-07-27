@@ -14,13 +14,8 @@ public record RedisStreamDataId
         Sequence = sequence;
     }
 
-    public static RedisStreamDataId Create(long timestamp, long sequence, StreamDataIdPattern idPattern = StreamDataIdPattern.FullyAuto, bool skipValidation = false)
+    public static RedisStreamDataId Create(long timestamp, long sequence)
     {
-        if (!skipValidation && idPattern == StreamDataIdPattern.FullForm && timestamp == 0 && sequence == 0)
-        {
-            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdNotGreaterThan0);
-        }
-
         return new RedisStreamDataId(timestamp, sequence);
     }
 
@@ -105,21 +100,8 @@ public record RedisStreamDataId
         return true;
     }
 
-    public static void ValidateDataId(StreamDataIdPattern idPattern, RedisStreamDataId newDataId, RedisStreamData streamData)
-    {
-        if (idPattern != StreamDataIdPattern.FullForm)
-        {
-            return;
-        }
-
-        if (!IsGreaterThan(newDataId, streamData.GetCurrentLargestId()))
-        {
-            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdSmallerThanTopItem);
-        }
-    }
-
-    public RedisStreamDataId GetNextId(StreamDataIdPattern idPattern) => new(Timestamp, Sequence + 1);
-    public static RedisStreamDataId GetNextId(RedisStreamDataId currentId, StreamDataIdPattern idPattern) => new(currentId.Timestamp, currentId.Sequence + 1);
+    public RedisStreamDataId GetNextId() => new(Timestamp, Sequence + 1);
+    public static RedisStreamDataId GetNextId(RedisStreamDataId currentId) => new(currentId.Timestamp, currentId.Sequence + 1);
 
     public override string ToString()
     {
@@ -128,7 +110,7 @@ public record RedisStreamDataId
         return $"{timeStamp}-{sequence}";
     }
 
-    private static bool IsGreaterThan(RedisStreamDataId newId, RedisStreamDataId? existingId)
+    internal static bool IsGreaterThan(RedisStreamDataId newId, RedisStreamDataId? existingId)
     {
         if (existingId is null)
         {

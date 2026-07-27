@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
-using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
 {
@@ -12,11 +12,9 @@ namespace MiniRedis.Commands
 
         public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
-            var cacheKey = new RedisEntry { Key = args[1] };
-            bool hasCountArg = args.Count > 2;
-            int requestedPopCount = hasCountArg ? int.Parse(args[2]) : 1;
+            var request = LPopRequest.Create(args);
 
-            return Task.FromResult(database.LPop(cacheKey, requestedPopCount));
+            return Task.FromResult(database.LPop(request.Key, request.Count));
         }
     }
 }

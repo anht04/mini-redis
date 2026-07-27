@@ -61,7 +61,7 @@ namespace Common.Helpers
         }
 
 
-        public static string FormatArray(List<(string, List<KeyValuePair<string, List<string>>>)> values)
+        public static string FormatArray(List<(string, List<KeyValuePair<string, List<string>>>?)> values)
         {
             if (values.Count == 0)
             {
@@ -81,9 +81,9 @@ namespace Common.Helpers
         }       
 
 
-        public static string FormatArray(string streamId, List<KeyValuePair<string, List<string>>> values)
+        public static string FormatArray(string streamId, List<KeyValuePair<string, List<string>>>? values)
         {
-            if (values.Count == 0)
+            if (values is null || values.Count == 0)
             {
                 return FormatArrayLength(0);
             }

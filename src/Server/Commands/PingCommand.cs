@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Data;
 
@@ -12,6 +13,11 @@ namespace MiniRedis.Commands
 
         public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
+            if (args.Count != 1)
+            {
+                throw new InvalidOperationException(RedisErrorMessages.InvalidArgument);
+            }
+
             return Task.FromResult(RESPFormatHelper.FormatSimpleString("PONG"));
         }
     }

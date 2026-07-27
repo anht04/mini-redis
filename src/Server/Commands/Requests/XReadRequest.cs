@@ -45,7 +45,7 @@ namespace MiniRedis.Commands.Requests
                 {
                     startSequenceNumber = 0;
                 }
-                var dataId = RedisStreamDataId.Create(startTimestamp!.Value, startSequenceNumber!.Value, StreamDataIdPattern.FullForm, skipValidation: true);
+                var dataId = RedisStreamDataId.Create(startTimestamp!.Value, startSequenceNumber!.Value);
 
                 var query = XReadStreamQuery.Create(new RedisEntry { Key = id }, dataId);
                 queries.Add(query);

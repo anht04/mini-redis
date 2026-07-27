@@ -1,7 +1,7 @@
 using System.Net.Sockets;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models;
-using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
 {
@@ -13,19 +13,17 @@ namespace MiniRedis.Commands
 
         public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
-            var entryDateTimeUtc = DateTimeOffset.UtcNow;
-            var cacheKey = new RedisEntry { Key = args[1] }; 
-            var hasValidTimeoutArg = float.TryParse(args[2], out var timeoutInSecondsArg);
+            var request = BLPopRequest.Create(args);
 
             var currentClient = new SubscribedClient
             {
                 Socket = client,
-                SubscribedAt = entryDateTimeUtc,
+                SubscribedAt = DateTimeOffset.UtcNow,
                 SubscribedTo = new TaskCompletionSource<string>(),
-                TimeoutInSeconds = hasValidTimeoutArg ? timeoutInSecondsArg : null
+                TimeoutInSeconds = request.TimeoutInSeconds
             };
 
-            return database.BLPopAsync(cacheKey, currentClient);
+            return database.BLPopAsync(request.Key, currentClient);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
-using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands;
 
@@ -12,8 +12,8 @@ public class GetCommand : ICommand
 
     public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
     {
-        var redisEntry = new RedisEntry { Key = args[1] };
+        var request = SingleKeyRequest.Create(args);
 
-        return Task.FromResult(database.Get(redisEntry));
+        return Task.FromResult(database.Get(request.Key));
     }
 }

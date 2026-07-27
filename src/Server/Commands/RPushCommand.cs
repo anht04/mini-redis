@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
-using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
 {
@@ -12,10 +12,9 @@ namespace MiniRedis.Commands
 
         public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
-            var insertValues = args[2..];
-            var cacheKey = new RedisEntry { Key = args[1] };
+            var request = PushRequest.Create(args);
 
-            return Task.FromResult(database.RPush(cacheKey, insertValues));
+            return Task.FromResult(database.RPush(request.Key, request.Values));
         }
     }
 }
