@@ -1,4 +1,5 @@
 ﻿using Common.Constants;
+using Common.Results;
 using System.Text;
 
 namespace Common.Helpers
@@ -42,7 +43,7 @@ namespace Common.Helpers
             return result.Insert(0, prefix).ToString();
         }
 
-        public static string FormatArray(List<KeyValuePair<string, List<string>>> values)
+        public static string FormatArray(List<StreamDataResult> values)
         {
             if (values.Count == 0)
             {
@@ -51,7 +52,7 @@ namespace Common.Helpers
 
             var result = new StringBuilder();
             var prefix = FormatArrayLength(values.Count);
-            
+
             foreach (var value in values)
             {
                 result.Append(FormatArray(value));
@@ -61,7 +62,7 @@ namespace Common.Helpers
         }
 
 
-        public static string FormatArray(List<(string, List<KeyValuePair<string, List<string>>>?)> values)
+        public static string FormatArray(List<XReadStreamResult> values)
         {
             if (values.Count == 0)
             {
@@ -73,15 +74,15 @@ namespace Common.Helpers
 
             foreach (var value in values)
             {
-                result.Append(FormatArray(value.Item1, value.Item2));
+                result.Append(FormatArray(value.StreamKey, value.Data));
             }
 
             var parsedResult = result.Insert(0, valuesPrefix).ToString();
             return parsedResult;
-        }       
+        }
 
 
-        public static string FormatArray(string streamId, List<KeyValuePair<string, List<string>>>? values)
+        public static string FormatArray(string streamId, List<StreamDataResult>? values)
         {
             if (values is null || values.Count == 0)
             {
@@ -121,9 +122,9 @@ namespace Common.Helpers
             return sb.ToString();
         }
         
-        private static string FormatArray(KeyValuePair<string, List<string>> keyValuePair)
+        private static string FormatArray(StreamDataResult entry)
         {
-            var values = keyValuePair.Value;
+            var values = entry.Values;
             if (values.Count == 0)
             {
                 return FormatArrayLength(0);
@@ -131,10 +132,10 @@ namespace Common.Helpers
 
             var result = new StringBuilder();
             var prefix = FormatArrayLength(2);
-            
-            result.Append(FormatBulkString(keyValuePair.Key) + FormatArray(values));
-            
-            
+
+            result.Append(FormatBulkString(entry.DataId) + FormatArray(values));
+
+
             return result.Insert(0, prefix).ToString();
         }
 

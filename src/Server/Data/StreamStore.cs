@@ -1,4 +1,5 @@
 using Common.Constants;
+using Common.Results;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Constants;
 using MiniRedis.Enums;
@@ -21,7 +22,7 @@ namespace MiniRedis.Data
             return AddDataRangeToCache(streamEntryKey, streamDataId, parsedStreamDataValues);
         }
 
-        public List<KeyValuePair<string, List<string>>>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose)
+        public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose)
         {
             if (!_cache.TryGetValue(cacheKey, out var value))
             {
@@ -75,15 +76,15 @@ namespace MiniRedis.Data
             return streamData
                 .GetRange(parsedStartId, parsedEndId)
                 .Select(kp =>
-                    new KeyValuePair<string, List<string>>(
+                    new StreamDataResult(
                         kp.Key.ToString(),
                         kp.Value.SelectMany(v => v.ToKeyValueStringArray()).ToList()))
                 .ToList();
         }
 
-        public List<(string, List<KeyValuePair<string, List<string>>>?)> XRead(XReadRequest request)
+        public List<XReadStreamResult> XRead(XReadRequest request)
         {
-            List<(string, List<KeyValuePair<string, List<string>>>?)> results = [];
+            List<XReadStreamResult> results = [];
             foreach (var query in request.Queries)
             {
                 var cacheKey = query.StreamId;
@@ -91,21 +92,21 @@ namespace MiniRedis.Data
 
                 if (!_cache.TryGetValue(cacheKey, out var value))
                 {
-                    results.Add((cacheKey.Key, null));
+                    results.Add(new XReadStreamResult(cacheKey.Key, null));
                     continue;
                 }
 
                 var streamData = value.AsStream();
 
-                List<KeyValuePair<string, List<string>>>? result = streamData
+                List<StreamDataResult>? result = streamData
                     .GetRangeGreaterThan(startId)
                     .Select(kp =>
-                        new KeyValuePair<string, List<string>>(
+                        new StreamDataResult(
                             kp.Key.ToString(),
                             kp.Value.SelectMany(v => v.ToKeyValueStringArray()).ToList()))
                     .ToList();
 
-                results.Add((cacheKey.Key, result));
+                results.Add(new XReadStreamResult(cacheKey.Key, result));
             }
 
             return results;

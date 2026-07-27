@@ -1,4 +1,5 @@
 using Common.Constants;
+using Common.Results;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Enums;
 using MiniRedis.Extensions;
@@ -89,10 +90,10 @@ namespace MiniRedis.Data
         public RedisStreamDataId XAdd(RedisEntry streamEntryKey, string streamDataId, List<RedisStreamDataValue> parsedStreamDataValues) =>
             _streamStore.XAdd(streamEntryKey, streamDataId, parsedStreamDataValues);
 
-        public List<KeyValuePair<string, List<string>>>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) =>
+        public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) =>
             _streamStore.XRange(cacheKey, startId, endId, purpose);
 
-        public List<(string, List<KeyValuePair<string, List<string>>>?)> XRead(XReadRequest request) =>
+        public List<XReadStreamResult> XRead(XReadRequest request) =>
             _streamStore.XRead(request);
     }
 }
