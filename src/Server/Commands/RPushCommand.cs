@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 
@@ -14,7 +15,7 @@ namespace MiniRedis.Commands
         {
             var request = PushRequest.Create(args);
 
-            return Task.FromResult(database.RPush(request.Key, request.Values));
+            return Task.FromResult(RESPFormatHelper.FormatInteger(database.RPush(request.Key, request.Values)));
         }
     }
 }

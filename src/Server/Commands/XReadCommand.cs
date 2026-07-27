@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 
@@ -14,6 +15,6 @@ public class XReadCommand: ICommand
     {
         var request = XReadRequest.Create(args);
 
-        return Task.FromResult(database.XRead(request));
+        return Task.FromResult(RESPFormatHelper.FormatArray(database.XRead(request)));
     }
 }

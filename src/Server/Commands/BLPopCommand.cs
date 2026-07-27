@@ -1,4 +1,6 @@
 using System.Net.Sockets;
+using Common.Constants;
+using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models;
@@ -11,7 +13,7 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => true;
 
-        public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
+        public async Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
         {
             var request = BLPopRequest.Create(args);
 
@@ -23,7 +25,11 @@ namespace MiniRedis.Commands
                 TimeoutInSeconds = request.TimeoutInSeconds
             };
 
-            return database.BLPopAsync(request.Key, currentClient);
+            var result = await database.BLPopAsync(request.Key, currentClient);
+
+            return result is null
+                ? RedisConstants.NullArray
+                : RESPFormatHelper.FormatArray([result.Value.Key, result.Value.Item]);
         }
     }
 }

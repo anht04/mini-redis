@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 
@@ -14,7 +15,8 @@ namespace MiniRedis.Commands
         {
             var request = LRangeRequest.Create(args);
 
-            return Task.FromResult(database.LRange(request.Key, request.FromIndex, request.ToIndex));
+            return Task.FromResult(
+                RESPFormatHelper.FormatArray(database.LRange(request.Key, request.FromIndex, request.ToIndex)));
         }
     }
 }

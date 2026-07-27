@@ -7,11 +7,13 @@ namespace MiniRedis.Commands.Requests
     {
         public RedisEntry Key { get; }
         public int Count { get; }
+        public bool HasExplicitCount { get; }
 
-        private LPopRequest(RedisEntry key, int count)
+        private LPopRequest(RedisEntry key, int count, bool hasExplicitCount)
         {
             Key = key;
             Count = count;
+            HasExplicitCount = hasExplicitCount;
         }
 
         public static LPopRequest Create(List<string> args)
@@ -21,14 +23,14 @@ namespace MiniRedis.Commands.Requests
                 throw new InvalidOperationException(RedisErrorMessages.InvalidArgument);
             }
 
-            var hasCountArg = args.Count > 2;
+            var hasExplicitCount = args.Count > 2;
             var count = 1;
-            if (hasCountArg && !int.TryParse(args[2], out count))
+            if (hasExplicitCount && !int.TryParse(args[2], out count))
             {
                 throw new InvalidOperationException(RedisErrorMessages.InvalidArgument);
             }
 
-            return new LPopRequest(new RedisEntry { Key = args[1] }, count);
+            return new LPopRequest(new RedisEntry { Key = args[1] }, count, hasExplicitCount);
         }
     }
 }

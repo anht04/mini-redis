@@ -1,4 +1,5 @@
-﻿using MiniRedis.Commands.Requests;
+﻿using Common.Helpers;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using System.Net.Sockets;
 
@@ -12,6 +13,6 @@ public class TypeCommand : ICommand
     {
         var request = SingleKeyRequest.Create(args);
 
-        return Task.FromResult(database.Type(request.Key));
+        return Task.FromResult(RESPFormatHelper.FormatSimpleString(database.Type(request.Key)));
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 
@@ -13,6 +14,6 @@ public class EchoCommand : ICommand
     public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
     {
         var request = SingleKeyRequest.Create(args);
-        return Task.FromResult(RedisDatabase.Echo(request.Key));
+        return Task.FromResult(RESPFormatHelper.FormatBulkString(RedisDatabase.Echo(request.Key)));
     }
 }
