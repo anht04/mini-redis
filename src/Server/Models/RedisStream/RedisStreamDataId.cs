@@ -8,20 +8,20 @@ public record RedisStreamDataId
     public long Timestamp { get; private set; }
     public long Sequence { get; private set; }
 
-    private RedisStreamDataId(long timestamp, long sequence, StreamDataIdPattern? idGenerationBehaviour = null)
+    private RedisStreamDataId(long timestamp, long sequence)
     {
-        if (idGenerationBehaviour == StreamDataIdPattern.FullForm && timestamp == 0 && sequence == 0)
-        {
-            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdNotGreaterThan0);
-        }
-
         Timestamp = timestamp;
         Sequence = sequence;
     }
 
-    public static RedisStreamDataId Create(long timestamp, long sequence, StreamDataIdPattern idPattern = StreamDataIdPattern.FullyAuto)
+    public static RedisStreamDataId Create(long timestamp, long sequence, StreamDataIdPattern idPattern = StreamDataIdPattern.FullyAuto, bool skipValidation = false)
     {
-        return new RedisStreamDataId(timestamp, sequence, idPattern);
+        if (!skipValidation && idPattern == StreamDataIdPattern.FullForm && timestamp == 0 && sequence == 0)
+        {
+            throw new InvalidOperationException(RedisErrorMessages.XAddStreamDataIdNotGreaterThan0);
+        }
+
+        return new RedisStreamDataId(timestamp, sequence);
     }
 
     public static bool TryParseStreamDataId(string input, out long? timestamp, out long? sequenceNumber, out StreamDataIdPattern dataIdPattern)
@@ -118,8 +118,8 @@ public record RedisStreamDataId
         }
     }
 
-    public RedisStreamDataId GetNextId(StreamDataIdPattern idPattern) => new(Timestamp, Sequence + 1, idPattern);
-    public static RedisStreamDataId GetNextId(RedisStreamDataId currentId, StreamDataIdPattern idPattern) => new(currentId.Timestamp, currentId.Sequence + 1, idPattern);
+    public RedisStreamDataId GetNextId(StreamDataIdPattern idPattern) => new(Timestamp, Sequence + 1);
+    public static RedisStreamDataId GetNextId(RedisStreamDataId currentId, StreamDataIdPattern idPattern) => new(currentId.Timestamp, currentId.Sequence + 1);
 
     public override string ToString()
     {

@@ -58,8 +58,29 @@ namespace Common.Helpers
             }
 
             return result.Insert(0, prefix).ToString();
-        }              
-        
+        }
+
+
+        public static string FormatArray(List<(string, List<KeyValuePair<string, List<string>>>)> values)
+        {
+            if (values.Count == 0)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+            var valuesPrefix = FormatArrayLength(values.Count);
+
+            foreach (var value in values)
+            {
+                result.Append(FormatArray(value.Item1, value.Item2));
+            }
+
+            var parsedResult = result.Insert(0, valuesPrefix).ToString();
+            return parsedResult;
+        }       
+
+
         public static string FormatArray(string streamId, List<KeyValuePair<string, List<string>>> values)
         {
             if (values.Count == 0)
@@ -69,7 +90,6 @@ namespace Common.Helpers
 
             var result = new StringBuilder();
 
-            var wrapperArray = FormatArray((string?)null);
             var streamIdArray = FormatArray(streamId);
             var valuesPrefix = FormatArrayLength(values.Count);
             
@@ -80,7 +100,6 @@ namespace Common.Helpers
 
             var parsedResult = result.Insert(0, valuesPrefix).ToString();
             parsedResult = ConcatFormattedArrays(parsedResult, streamIdArray);
-            parsedResult = ConcatFormattedArrays(parsedResult, wrapperArray);
             
             return parsedResult;
         }

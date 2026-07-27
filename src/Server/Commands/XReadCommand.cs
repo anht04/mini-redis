@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models.GlobalCache;
 
@@ -12,9 +13,8 @@ public class XReadCommand: ICommand
 
     public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
     {
-        var cacheKey = new RedisEntry { Key = args[2] };
-        var startIdOrStartArgument = args[3].Trim();
+        var request = XReadRequest.Create(args);
 
-        return Task.FromResult(database.XRead(cacheKey, startIdOrStartArgument));
+        return Task.FromResult(database.XRead(request));
     }
 }
