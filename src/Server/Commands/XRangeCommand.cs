@@ -2,7 +2,6 @@
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models;
-using System.Net.Sockets;
 
 namespace MiniRedis.Commands
 {

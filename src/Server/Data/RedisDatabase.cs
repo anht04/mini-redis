@@ -3,7 +3,6 @@ using Common.Results;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Enums;
 using MiniRedis.Extensions;
-using MiniRedis.Models;
 using MiniRedis.Models.GlobalCache;
 using MiniRedis.Models.RedisStream;
 
@@ -81,19 +80,14 @@ namespace MiniRedis.Data
 
         public int RPush(RedisEntry cacheKey, List<string> insertValues) => _listStore.RPush(cacheKey, insertValues);
 
-        public List<string>? LRange(RedisEntry cacheKey, int fromIndex, int toIndex) =>
-            _listStore.LRange(cacheKey, fromIndex, toIndex);
+        public List<string>? LRange(RedisEntry cacheKey, int fromIndex, int toIndex) => _listStore.LRange(cacheKey, fromIndex, toIndex);
 
-        public string? BLPop(RedisEntry cacheKey) =>
-            _listStore.BLPop(cacheKey);
+        public string? BLPop(RedisEntry cacheKey) => _listStore.BLPop(cacheKey);
 
-        public RedisStreamDataId XAdd(RedisEntry streamEntryKey, string streamDataId, List<RedisStreamDataValue> parsedStreamDataValues) =>
-            _streamStore.XAdd(streamEntryKey, streamDataId, parsedStreamDataValues);
+        public RedisStreamDataId XAdd(RedisEntry streamEntryKey, string streamDataId, List<RedisStreamDataValue> parsedStreamDataValues) => _streamStore.XAdd(streamEntryKey, streamDataId, parsedStreamDataValues);
 
-        public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) =>
-            _streamStore.XRange(cacheKey, startId, endId, purpose);
+        public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) => _streamStore.XRange(cacheKey, startId, endId, purpose);
 
-        public List<XReadStreamResult> XRead(XReadRequest request) =>
-            _streamStore.XRead(request);
+        public List<XReadStreamResult> XRead(XReadRequest request) => _streamStore.XRead(request);
     }
 }

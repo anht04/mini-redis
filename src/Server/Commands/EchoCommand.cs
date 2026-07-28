@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using Common.Helpers;
+﻿using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models;
