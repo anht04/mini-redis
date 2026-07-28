@@ -1,8 +1,9 @@
-﻿using System.Net.Sockets;
-using Common.Constants;
+﻿using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
+using MiniRedis.Models;
+using System.Net.Sockets;
 
 namespace MiniRedis.Commands
 {
@@ -12,19 +13,21 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => true;
 
-        public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
+        public ValueTask<CommandOutcome> TryExecuteAsync(CommandRequest request, RedisDatabase database)
         {
-            var request = LPopRequest.Create(args);
-            var poppedItems = database.LPop(request.Key, request.Count);
+            var requestArgs = LPopRequest.Create(request.Args);
+            var poppedItems = database.LPop(requestArgs.Key, requestArgs.Count);
 
             if (poppedItems.Count == 0)
             {
-                return Task.FromResult(request.HasExplicitCount ? RedisConstants.NullArray : RedisConstants.NullBulkString);
+                return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(requestArgs.HasExplicitCount 
+                    ? RedisConstants.NullArray 
+                    : RedisConstants.NullBulkString));
             }
 
-            return Task.FromResult(request.HasExplicitCount
-                ? RESPFormatHelper.FormatArray(poppedItems)
-                : RESPFormatHelper.FormatBulkString(poppedItems[0]));
+            return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(requestArgs.HasExplicitCount 
+                ? RESPFormatHelper.FormatArray(poppedItems) 
+                : RESPFormatHelper.FormatBulkString(poppedItems[0])));
         }
     }
 }

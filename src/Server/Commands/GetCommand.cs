@@ -1,8 +1,8 @@
-﻿using System.Net.Sockets;
-using Common.Constants;
+﻿using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
+using MiniRedis.Models;
 
 namespace MiniRedis.Commands;
 
@@ -12,13 +12,13 @@ public class GetCommand : ICommand
 
     public bool IsWriteCommand => false;
 
-    public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
+    public ValueTask<CommandOutcome> TryExecuteAsync(CommandRequest request, RedisDatabase database)
     {
-        var request = SingleKeyRequest.Create(args);
-        var value = database.Get(request.Key);
+        var requestArgs = SingleKeyRequest.Create(request.Args);
+        var value = database.Get(requestArgs.Key);
 
-        return Task.FromResult(value is null
+        return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(value is null
             ? RedisConstants.NullBulkString
-            : RESPFormatHelper.FormatBulkString(value));
+            : RESPFormatHelper.FormatBulkString(value)));
     }
 }

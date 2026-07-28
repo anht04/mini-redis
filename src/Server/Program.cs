@@ -1,15 +1,25 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Channels;
 using Common.Helpers;
 using MiniRedis.Commands.Factories;
+using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Helpers;
+using MiniRedis.Models;
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 Console.WriteLine("Logs from your program will appear here!");
 
 RedisDatabase database = new RedisDatabase();
+
+var channel = Channel.CreateUnbounded<CommandRequest>(new UnboundedChannelOptions
+{
+    SingleReader = true
+});
+
+_ = ProcessCommandLoopAsync(channel.Reader, database, channel.Writer);
 
 var server = new TcpListener(IPAddress.Any, 6379);
 server.Start();
@@ -17,10 +27,10 @@ server.Start();
 while (true)
 {
     var client = await server.AcceptSocketAsync();
-    _ = HandleClientAsync(client);
+    _ = HandleClientAsync(client, channel.Writer);
 }
 
-async Task HandleClientAsync(Socket client)
+async Task HandleClientAsync(Socket client, ChannelWriter<CommandRequest> writer)
 {
     var buffer = new byte[1024];
     while (true)
@@ -31,19 +41,22 @@ async Task HandleClientAsync(Socket client)
         {
             break;
         }
-        var request = Encoding.UTF8.GetString(buffer, 0 , byteReads);
+        var rawRequest = Encoding.UTF8.GetString(buffer, 0, byteReads);
 
         // Console.WriteLine($"Request: {request}");
 
-        var parsedArgs = RequestParserHelper.Parse(request);
+        var parsedArgs = RequestParserHelper.Parse(rawRequest);
         string response;
         var commandName = parsedArgs[0].ToUpper();
         var command = CommandFactory.GetCommand(commandName);
+
         if (command != null)
         {
+            var request = new CommandRequest { Args = parsedArgs, Command = command, Writer = writer };
             try
             {
-                response = await command.ExecuteAsync(parsedArgs, database, client);
+                await writer.WriteAsync(request);
+                response = await request.ReplyTcs.Task;
             }
             catch (Exception e)
             {
@@ -60,4 +73,25 @@ async Task HandleClientAsync(Socket client)
     }
 
     client.Close();
+}
+
+static async Task ProcessCommandLoopAsync(ChannelReader<CommandRequest> reader,
+    RedisDatabase database,
+    ChannelWriter<CommandRequest> writer)
+{
+    await foreach (var request in reader.ReadAllAsync())
+    {
+        try
+        {
+            var outcome = await request.Command.TryExecuteAsync(request, database);
+            if (outcome is CommandOutcome.Completed completed)
+            {
+                request.ReplyTcs.TrySetResult(completed.Reply);
+            }
+        }
+        catch (Exception ex)
+        {
+            request.ReplyTcs.TrySetResult(RESPFormatHelper.FormatSimpleErrorString(ex.Message));
+        }
+    }
 }

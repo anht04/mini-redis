@@ -1,6 +1,7 @@
 ﻿using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
+using MiniRedis.Models;
 using System.Net.Sockets;
 
 namespace MiniRedis.Commands;
@@ -10,11 +11,11 @@ public class XAddCommand : ICommand
     public int Arity => 5;
     public bool IsWriteCommand => true;
 
-    public async Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
+    public ValueTask<CommandOutcome> TryExecuteAsync(CommandRequest request, RedisDatabase database)
     {
-        var request = XAddRequest.Create(args);
-        var dataId = database.XAdd(request.Key, request.DataId, request.Values);
+        var requestArgs = XAddRequest.Create(request.Args);
+        var dataId = database.XAdd(requestArgs.Key, requestArgs.DataId, requestArgs.Values);
 
-        return await Task.FromResult(RESPFormatHelper.FormatBulkString(dataId.ToString()));
+        return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RESPFormatHelper.FormatBulkString(dataId.ToString())));
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Common.Helpers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
+using MiniRedis.Models;
 using System.Net.Sockets;
 
 namespace MiniRedis.Commands;
@@ -9,10 +10,10 @@ public class TypeCommand : ICommand
 {
     public int Arity => -3;
     public bool IsWriteCommand => false;
-    public Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
+    public ValueTask<CommandOutcome> TryExecuteAsync(CommandRequest request, RedisDatabase database)
     {
-        var request = SingleKeyRequest.Create(args);
+        var requestArgs = SingleKeyRequest.Create(request.Args);
 
-        return Task.FromResult(RESPFormatHelper.FormatSimpleString(database.Type(request.Key)));
+        return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RESPFormatHelper.FormatSimpleString(database.Type(requestArgs.Key))));
     }
 }
