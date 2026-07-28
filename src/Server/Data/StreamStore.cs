@@ -84,7 +84,7 @@ namespace MiniRedis.Data
                 .ToList();
         }
 
-        public async Task<List<XReadStreamResult>> XReadAsync(XReadRequest request, SubscribedClient currentClient)
+        public List<XReadStreamResult> XRead(XReadRequest request)
         {
             List<XReadStreamResult> results = [];
             foreach (var query in request.Queries)
@@ -94,22 +94,6 @@ namespace MiniRedis.Data
 
                 if (!_cache.TryGetValue(cacheKey, out var value))
                 {
-                    if (request.IsBlockingRequest)
-                    {
-                        BlockingManager.Subscribe(cacheKey.Key, currentClient);
-                        var delayMilliseconds = currentClient.TimeoutInSeconds is > 0
-                            ? (int)currentClient.TimeoutInSeconds
-                            : Timeout.Infinite;
-                        var timeoutDelayTask = Task.Delay(delayMilliseconds);
-                        var completedTask = await Task.WhenAny(currentClient.SubscribedTo.Task, timeoutDelayTask);
-                        if (completedTask == currentClient.SubscribedTo.Task)
-                        {
-                            var item = await currentClient.SubscribedTo.Task;
-                            results.Add(new XReadStreamResult(cacheKey.Key, null)); //TODO FIX THIS TOMORROW
-                        }
-                    }
-                    
-                    
                     results.Add(new XReadStreamResult(cacheKey.Key, null));
                     continue;
                 }

@@ -1,5 +1,6 @@
-﻿using System.Net.Sockets;
+﻿using Common.Constants;
 using Common.Helpers;
+using MiniRedis.Commands.AsyncManagers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models;
@@ -12,17 +13,36 @@ public class XReadCommand: ICommand
 
     public bool IsWriteCommand => false;
 
-    public async Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
+    public ValueTask<CommandOutcome> TryExecuteAsync(CommandRequest request, RedisDatabase database)
     {
-        var request = XReadRequest.Create(args);
-        var currentClient = new SubscribedClient
+        var requestArgs = XReadRequest.Create(request.Args);
+
+        if (request.IsTimedOut)
         {
-            Socket = client,
+            return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RedisConstants.NullArray));
+        }
+
+        var results = database.XRead(requestArgs);
+        var hasData = results.Any(r => r.Data is { Count: > 0 });
+
+        if (hasData || !requestArgs.IsBlockingRequest || request.IsRetry)
+        {
+            return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RESPFormatHelper.FormatArray(results)));
+        }
+
+        var subscribedClient = new SubscribedClient
+        {
             SubscribedAt = DateTimeOffset.UtcNow,
-            SubscribedTo = new TaskCompletionSource<string>(),
-            TimeoutInSeconds = request.TimeoutInSeconds
+            TimeoutMilliseconds = requestArgs.TimeoutInSeconds > 0 ? requestArgs.TimeoutInSeconds * 1000 : null
         };
 
-        return RESPFormatHelper.FormatArray(await database.XRead(request, currentClient));
+        foreach (var query in requestArgs.Queries)
+        {
+            BlockingManager.Subscribe(query.StreamId.Key, subscribedClient);
+        }
+
+        _ = BlockingManager.WaitThenResubmitAsync(subscribedClient, request);
+
+        return new ValueTask<CommandOutcome>(new CommandOutcome.Pending());
     }
 }

@@ -1,9 +1,10 @@
-using System.Net.Sockets;
 using Common.Constants;
 using Common.Helpers;
+using MiniRedis.Commands.AsyncManagers;
 using MiniRedis.Commands.Requests;
 using MiniRedis.Data;
 using MiniRedis.Models;
+using MiniRedis.Models.GlobalCache;
 
 namespace MiniRedis.Commands
 {
@@ -13,23 +14,45 @@ namespace MiniRedis.Commands
 
         public bool IsWriteCommand => true;
 
-        public async Task<string> ExecuteAsync(List<string> args, RedisDatabase database, Socket client)
-        {
-            var request = BLPopRequest.Create(args);
 
-            var currentClient = new SubscribedClient
+        public ValueTask<CommandOutcome> TryExecuteAsync(CommandRequest request, RedisDatabase database)
+        {
+            // ANHT summarization:
+            // 1. Try to Pop synchronously no matter this is the first time or retry. If has data => directly return.
+            // 2. If this is a retry turn (which means timeout or another client Popped the result) => return Null array.
+            // 3. If this is the first time and the store is currently empty => Subscribe and wait
+            // 4. Activate the wait Task and return Pending status to allow Event Loop can be able to process other clients' requests.
+
+            var blPopRequest = BLPopRequest.Create(request.Args);
+
+            if(request.IsTimedOut)
             {
-                Socket = client,
+                return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RedisConstants.NullArray));
+            }
+
+            var poppedItem = database.BLPop(new RedisEntry { Key = blPopRequest.Key.Key });
+            if (poppedItem is not null)
+            {
+                return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(
+                    RESPFormatHelper.FormatArray([blPopRequest.Key.Key, poppedItem])));
+            }
+
+            if(request.IsRetry)
+            {
+                return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RedisConstants.NullArray));
+            }
+
+            var subscribedClient = new SubscribedClient
+            {
                 SubscribedAt = DateTimeOffset.UtcNow,
-                SubscribedTo = new TaskCompletionSource<string>(),
-                TimeoutInSeconds = request.TimeoutInSeconds
+                TimeoutMilliseconds = blPopRequest.TimeoutInSeconds > 0 ? (int)(blPopRequest.TimeoutInSeconds * 1000) : null
             };
 
-            var result = await database.BLPopAsync(request.Key, currentClient);
+            BlockingManager.Subscribe(blPopRequest.Key.Key, subscribedClient);
 
-            return result is null
-                ? RedisConstants.NullArray
-                : RESPFormatHelper.FormatArray([result.Value.Key, result.Value.Item]);
+            _ = BlockingManager.WaitThenResubmitAsync(subscribedClient, request);
+
+            return new ValueTask<CommandOutcome>(new CommandOutcome.Pending());
         }
     }
 }

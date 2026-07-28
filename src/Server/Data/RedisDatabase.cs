@@ -84,8 +84,8 @@ namespace MiniRedis.Data
         public List<string>? LRange(RedisEntry cacheKey, int fromIndex, int toIndex) =>
             _listStore.LRange(cacheKey, fromIndex, toIndex);
 
-        public Task<(string Key, string Item)?> BLPopAsync(RedisEntry cacheKey, SubscribedClient currentClient) =>
-            _listStore.BLPopAsync(cacheKey, currentClient);
+        public string? BLPop(RedisEntry cacheKey) =>
+            _listStore.BLPop(cacheKey);
 
         public RedisStreamDataId XAdd(RedisEntry streamEntryKey, string streamDataId, List<RedisStreamDataValue> parsedStreamDataValues) =>
             _streamStore.XAdd(streamEntryKey, streamDataId, parsedStreamDataValues);
@@ -93,7 +93,7 @@ namespace MiniRedis.Data
         public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) =>
             _streamStore.XRange(cacheKey, startId, endId, purpose);
 
-        public async Task<List<XReadStreamResult>> XRead(XReadRequest request, SubscribedClient client) =>
-            await _streamStore.XReadAsync(request, client);
+        public List<XReadStreamResult> XRead(XReadRequest request) =>
+            _streamStore.XRead(request);
     }
 }

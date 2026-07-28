@@ -47,38 +47,20 @@ namespace MiniRedis.Data
         {
             insertValues.Reverse();
 
-            var waitingClient = BlockingManager.GetLongestClient(cacheKey.Key);
-            if (waitingClient == null)
-            {
-                return LPushToCache(insertValues, cacheKey);
-            }
+            var count = LPushToCache(insertValues, cacheKey);
 
-            waitingClient.SubscribedTo.SetResult(insertValues[0]);
-            if (insertValues.Count == 1)
-            {
-                return 1;
-            }
+            BlockingManager.SignalLongestClient(cacheKey.Key);
 
-            var remainingValues = insertValues.Skip(1).ToList();
-            return LPushToCache(remainingValues, cacheKey, 1);
+            return count;
         }
 
         public int RPush(RedisEntry cacheKey, List<string> insertValues)
         {
-            var waitingClient = BlockingManager.GetLongestClient(cacheKey.Key);
-            if (waitingClient == null)
-            {
-                return RPushToCache(insertValues, cacheKey);
-            }
+            var count = RPushToCache(insertValues, cacheKey);
 
-            waitingClient.SubscribedTo.SetResult(insertValues[0]);
-            if (insertValues.Count == 1)
-            {
-                return 1;
-            }
+            BlockingManager.SignalLongestClient(cacheKey.Key);
 
-            var remainingValues = insertValues.Skip(1).ToList();
-            return RPushToCache(remainingValues, cacheKey, 1);
+            return count;
         }
 
         public List<string>? LRange(RedisEntry cacheKey, int fromIndex, int toIndex)
@@ -107,34 +89,15 @@ namespace MiniRedis.Data
             return parsedValue.GetRange(normalizedFromIndex, normalizedToIndex - normalizedFromIndex + 1);
         }
 
-        public async Task<(string Key, string Item)?> BLPopAsync(RedisEntry cacheKey, SubscribedClient currentClient)
+        public string? BLPop(RedisEntry cacheKey)
         {
-            _cache.TryGetValue(cacheKey, out var redisValue);
-
-            var valueList = redisValue?.AsList() ?? [];
-
-            var poppedItem = PopFromList(valueList);
-            if (poppedItem != null)
+            if (!_cache.TryGetValue(cacheKey, out var redisValue))
             {
-                return (cacheKey.Key, poppedItem);
+                return null;
             }
 
-            BlockingManager.Subscribe(cacheKey.Key, currentClient);
-
-            var delayMilliseconds = currentClient.TimeoutInSeconds is > 0
-                ? (int)(currentClient.TimeoutInSeconds.Value * 1000)
-                : Timeout.Infinite;
-
-            var timeoutDelayTask = Task.Delay(delayMilliseconds);
-            var completedTask = await Task.WhenAny(currentClient.SubscribedTo.Task, timeoutDelayTask);
-
-            if (completedTask == currentClient.SubscribedTo.Task)
-            {
-                var item = await currentClient.SubscribedTo.Task;
-                return (cacheKey.Key, item);
-            }
-
-            return null;
+            var valueList = redisValue.AsList() ?? [];
+            return PopFromList(valueList);
         }
 
         private static string? PopFromList(List<string> list)
@@ -149,32 +112,32 @@ namespace MiniRedis.Data
             return poppedItem;
         }
 
-        private int LPushToCache(List<string> values, RedisEntry cacheKey, int valuesSentToClientCount = 0)
+        private int LPushToCache(List<string> values, RedisEntry cacheKey)
         {
             if (!_cache.TryGetValue(cacheKey, out var value))
             {
                 _cache.Add(cacheKey, new RedisValue(values));
-                return values.Count + valuesSentToClientCount;
+                return values.Count;
             }
 
             var valueList = value.AsList();
             valueList.InsertRange(0, values);
 
-            return valueList.Count + valuesSentToClientCount;
+            return valueList.Count;
         }
 
-        private int RPushToCache(List<string> values, RedisEntry cacheKey, int valuesSentToClientCount = 0)
+        private int RPushToCache(List<string> values, RedisEntry cacheKey)
         {
             if (!_cache.TryGetValue(cacheKey, out var value))
             {
                 _cache.Add(cacheKey, new RedisValue(values));
-                return values.Count + valuesSentToClientCount;
+                return values.Count;
             }
 
             var valueList = value.AsList();
             valueList.AddRange(values);
 
-            return valueList.Count + valuesSentToClientCount;
+            return valueList.Count;
         }
 
         private static int ConvertToPositiveIndex(List<string> collection, int rawIndex)

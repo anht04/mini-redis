@@ -1,4 +1,5 @@
-﻿using MiniRedis.Models;
+﻿using MiniRedis.Commands.Requests;
+using MiniRedis.Models;
 
 namespace MiniRedis.Commands.AsyncManagers
 {
@@ -17,7 +18,7 @@ namespace MiniRedis.Commands.AsyncManagers
             subscribedClients.Enqueue(client);
         }
 
-        public static SubscribedClient? GetLongestClient(string key)
+        public static SubscribedClient? SignalLongestClient(string key)
         {
             if (!_blockedClients.TryGetValue(key, out var subscribedClients))
             {
@@ -27,13 +28,24 @@ namespace MiniRedis.Commands.AsyncManagers
             while (subscribedClients.Count > 0)
             {
                 var longestClient = subscribedClients.Dequeue();
-                if (!longestClient.IsExpired)
+                if (longestClient.Singal.TrySetResult())
                 {
                     return longestClient;
                 }
             }
 
             return null;
+        }
+
+        public static async Task WaitThenResubmitAsync(SubscribedClient subscribedClient, CommandRequest request)
+        {
+            var timeoutTask = Task.Delay((int?)subscribedClient.TimeoutMilliseconds ?? Timeout.Infinite);
+            var completedTask = await Task.WhenAny(subscribedClient.Singal.Task, timeoutTask);
+
+            request.IsRetry = true;
+            request.IsTimedOut = completedTask == timeoutTask;
+
+            await request.Writer.WriteAsync(request);
         }
     }
 }
