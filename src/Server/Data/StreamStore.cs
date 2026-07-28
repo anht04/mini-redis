@@ -102,13 +102,32 @@ namespace MiniRedis.Data
 
                 var streamData = value.AsStream();
 
-                var result = streamData
+                List<StreamDataResult>? result;
+                if (request.IsBlockingRequest && request.HasStartingIdSign)
+                {
+                    var lastData = streamData.GetLast(startId);
+
+                    if(lastData == null)
+                    {
+                        result = [];
+                    }
+                    else
+                    {
+                        result = [new StreamDataResult(
+                            lastData.Value.Key.ToString(),
+                            lastData.Value.Value.SelectMany(v => v.ToKeyValueStringArray()).ToList())];
+                    }
+                }
+                else
+                {
+                    result = streamData
                     .GetRangeGreaterThan(startId)
                     .Select(kp =>
                         new StreamDataResult(
                             kp.Key.ToString(),
                             kp.Value.SelectMany(v => v.ToKeyValueStringArray()).ToList()))
                     .ToList();
+                }
 
                 results.Add(new XReadStreamResult(cacheKey.Key, result));
             }

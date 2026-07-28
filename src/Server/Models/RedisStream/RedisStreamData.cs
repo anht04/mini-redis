@@ -71,6 +71,19 @@ public class RedisStreamData
         return dataInRange;
     }
 
+    public KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>? GetLast(RedisStreamDataId? id)
+    {
+        var collection = Data
+            .Where(d => id == null || (d.Key.Timestamp >= id.Timestamp && d.Key.Sequence > id.Sequence));
+
+        if(!collection.Any())
+        {
+            return null;
+        }
+
+        return collection.MaxBy(d => d.Key.Sequence);
+    }
+
     public RedisStreamDataId? GetCurrentLargestId(long timestamp)
     {
         if (Data.Count == 0)

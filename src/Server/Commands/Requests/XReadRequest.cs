@@ -11,18 +11,21 @@ public class XReadRequest
     public IReadOnlyList<XReadStreamQuery> Queries { get; private set; }
     public float? TimeoutInMilliseconds { get; }
     public bool IsBlockingRequest { get; }
+    public bool HasStartingIdSign { get; }
 
-    private XReadRequest(List<XReadStreamQuery> queries, float? timeoutInSeconds, bool isBlockingRequest)
+    private XReadRequest(List<XReadStreamQuery> queries, float? timeoutInSeconds, bool isBlockingRequest, bool hasStartingIdSign)
     {
         Queries = queries;
         TimeoutInMilliseconds = timeoutInSeconds;
         IsBlockingRequest = isBlockingRequest;
+        HasStartingIdSign = hasStartingIdSign;
     }
 
     public static XReadRequest Create(List<string> args)
     {
         float? timeoutInMilliseconds = null;
         var isBlockingRequest = false;
+        var hasStartingIdSign = false;
         if (args.Count < MinimumArgs || !args[1].Equals("STREAMS", StringComparison.InvariantCultureIgnoreCase) && !args[1].Equals("BLOCK", StringComparison.InvariantCultureIgnoreCase))
         {
             throw new InvalidOperationException(RedisErrorMessages.InvalidArgument);
@@ -39,18 +42,24 @@ public class XReadRequest
             {
                 timeoutInMilliseconds = parsedTimeoutInMillisecond;
             }
+
+            if(args.Last().Trim() == "$")
+            {
+                hasStartingIdSign = true;
+            }
         }
 
         var idStartingIndex = isBlockingRequest ? 4 : 2;
         var argsValues = args[idStartingIndex..];
-        if (argsValues.Count % 2 != 0)
+        if (!hasStartingIdSign && argsValues.Count % 2 != 0)
         {
             throw new InvalidOperationException(RedisErrorMessages.XRead.UnbalancedXREADArgs);
         }
 
         List<XReadStreamQuery> queries = [];
-        var streamIds = argsValues[..(argsValues.Count / 2)];
-        var dataIds = argsValues[(argsValues.Count / 2)..];
+        var streamIdsEndingIndex = Math.Max(argsValues.Count / 2, 1);
+        var streamIds = argsValues[..streamIdsEndingIndex];
+        var dataIds = argsValues[streamIdsEndingIndex..];
         var currentIndex = 0;
         foreach (var id in streamIds)
         {
@@ -65,6 +74,12 @@ public class XReadRequest
                 startSequenceNumber = 0;
             }
 
+            if (startPattern == StreamDataIdPattern.StartingSequence)
+            {
+                startTimestamp = 0;
+                startSequenceNumber = 0;
+            }
+
             var dataId = RedisStreamDataId.Create(startTimestamp!.Value, startSequenceNumber!.Value);
 
             var query = XReadStreamQuery.Create(new RedisEntry { Key = id }, dataId);
@@ -72,6 +87,6 @@ public class XReadRequest
             currentIndex++;
         }
 
-        return new XReadRequest(queries, timeoutInMilliseconds, isBlockingRequest);
+        return new XReadRequest(queries, timeoutInMilliseconds, isBlockingRequest, hasStartingIdSign);
     }
 }

@@ -25,14 +25,19 @@ public class XReadCommand: ICommand
         var results = database.XRead(requestArgs);
         var hasData = results.Any(r => r.Data is { Count: > 0 });
 
-        if (hasData || !requestArgs.IsBlockingRequest || request.IsRetry)
+        if (!requestArgs.IsBlockingRequest || request.IsRetry)
+        {
+            return new ValueTask<CommandOutcome>(
+                new CommandOutcome.Completed(RESPFormatHelper.FormatArray(results)));
+        }
+
+        if (hasData && !requestArgs.HasStartingIdSign)
         {
             return new ValueTask<CommandOutcome>(new CommandOutcome.Completed(RESPFormatHelper.FormatArray(results)));
         }
 
         var subscribedClient = new SubscribedClient
         {
-            SubscribedAt = DateTimeOffset.UtcNow,
             TimeoutMilliseconds = requestArgs.TimeoutInMilliseconds > 0 ? requestArgs.TimeoutInMilliseconds : null
         };
 

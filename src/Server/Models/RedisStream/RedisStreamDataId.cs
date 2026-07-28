@@ -1,5 +1,4 @@
-﻿using Common.Constants;
-using MiniRedis.Enums;
+﻿using MiniRedis.Enums;
 
 namespace MiniRedis.Models.RedisStream;
 
@@ -72,9 +71,16 @@ public record RedisStreamDataId
             return true;
         }
 
+        if (input.Trim() == "$")
+        {
+            dataIdPattern = StreamDataIdPattern.StartingSequence;
+            return true;
+        }
+
         var parts = input.Split('-');
         if (parts.Length < 1 || parts.Length > 2)
         {
+            return false;
         }
 
         if (!long.TryParse(parts[0], out var time) || time < 0)
