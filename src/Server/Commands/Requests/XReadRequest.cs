@@ -9,19 +9,19 @@ public class XReadRequest
 {
     private const int MinimumArgs = 4;
     public IReadOnlyList<XReadStreamQuery> Queries { get; private set; }
-    public float? TimeoutInSeconds { get; }
+    public float? TimeoutInMilliseconds { get; }
     public bool IsBlockingRequest { get; }
 
     private XReadRequest(List<XReadStreamQuery> queries, float? timeoutInSeconds, bool isBlockingRequest)
     {
         Queries = queries;
-        TimeoutInSeconds = timeoutInSeconds;
+        TimeoutInMilliseconds = timeoutInSeconds;
         IsBlockingRequest = isBlockingRequest;
     }
 
     public static XReadRequest Create(List<string> args)
     {
-        float? timeoutInSeconds = null;
+        float? timeoutInMilliseconds = null;
         var isBlockingRequest = false;
         if (args.Count < MinimumArgs || !args[1].Equals("STREAMS", StringComparison.InvariantCultureIgnoreCase) && !args[1].Equals("BLOCK", StringComparison.InvariantCultureIgnoreCase))
         {
@@ -31,13 +31,18 @@ public class XReadRequest
         if (args[1].Equals("BLOCK", StringComparison.InvariantCultureIgnoreCase))
         {
             isBlockingRequest = true;
-            if (!float.TryParse(args[2], out var parsedTimeoutInSecond) && !args[2].Equals("STREAMS", StringComparison.InvariantCultureIgnoreCase) || parsedTimeoutInSecond < 0)
+            if (!float.TryParse(args[2], out var parsedTimeoutInMillisecond) && !args[2].Equals("STREAMS", StringComparison.InvariantCultureIgnoreCase) || parsedTimeoutInMillisecond < 0)
             {
                 throw new InvalidOperationException(RedisErrorMessages.InvalidArgument);
             }
+            else
+            {
+                timeoutInMilliseconds = parsedTimeoutInMillisecond;
+            }
         }
-            
-        var argsValues = args[2..];
+
+        var idStartingIndex = isBlockingRequest ? 4 : 2;
+        var argsValues = args[idStartingIndex..];
         if (argsValues.Count % 2 != 0)
         {
             throw new InvalidOperationException(RedisErrorMessages.XRead.UnbalancedXREADArgs);
@@ -67,6 +72,6 @@ public class XReadRequest
             currentIndex++;
         }
 
-        return new XReadRequest(queries, timeoutInSeconds, isBlockingRequest);
+        return new XReadRequest(queries, timeoutInMilliseconds, isBlockingRequest);
     }
 }

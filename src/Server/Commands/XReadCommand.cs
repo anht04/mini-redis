@@ -33,7 +33,7 @@ public class XReadCommand: ICommand
         var subscribedClient = new SubscribedClient
         {
             SubscribedAt = DateTimeOffset.UtcNow,
-            TimeoutMilliseconds = requestArgs.TimeoutInSeconds > 0 ? requestArgs.TimeoutInSeconds * 1000 : null
+            TimeoutMilliseconds = requestArgs.TimeoutInMilliseconds > 0 ? requestArgs.TimeoutInMilliseconds : null
         };
 
         foreach (var query in requestArgs.Queries)

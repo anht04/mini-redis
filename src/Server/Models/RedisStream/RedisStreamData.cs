@@ -17,11 +17,6 @@ public class RedisStreamData
     public RedisStreamDataId AddRange(RedisStreamDataId baseNewDataId, List<RedisStreamDataValue> streamDataValues,
         StreamDataIdPattern idPattern)
     {
-        if (Data.TryGetValue(baseNewDataId, out var existingDataValues))
-        {
-            throw new InvalidOperationException($"Stream Data key {baseNewDataId} already exists");
-        }
-
         if (idPattern == StreamDataIdPattern.FullForm)
         {
             if (baseNewDataId.Timestamp == 0 && baseNewDataId.Sequence == 0)

@@ -21,7 +21,9 @@ namespace MiniRedis.Data
 
         public RedisStreamDataId XAdd(RedisEntry streamEntryKey, string streamDataId, List<RedisStreamDataValue> parsedStreamDataValues)
         {
-            return AddDataRangeToCache(streamEntryKey, streamDataId, parsedStreamDataValues);
+            var result = AddDataRangeToCache(streamEntryKey, streamDataId, parsedStreamDataValues);
+            BlockingManager.SignalLongestClient(streamEntryKey.Key);
+            return result;
         }
 
         public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose)
