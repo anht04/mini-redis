@@ -35,7 +35,7 @@ namespace MiniRedis.Models.GlobalCache
         {
             if (!IsString || !int.TryParse((string)_value, out var value))
             {
-                throw new InvalidOperationException(RedisErrorMessages.WrongTypeOperation);
+                throw new InvalidOperationException(RedisErrorMessages.WrongTypeForIntOperation);
             }
             return value;
         }
