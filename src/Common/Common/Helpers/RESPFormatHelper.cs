@@ -25,6 +25,24 @@ namespace Common.Helpers
             return result.Insert(0, prefix).ToString();
         }
 
+        public static string FormatArrayWithRawStyle(List<string>? values)
+        {
+            if (values is null)
+            {
+                return FormatArrayLength(0);
+            }
+
+            var result = new StringBuilder();
+            var prefix = FormatArrayLength(values.Count);
+
+            foreach (var value in values)
+            {
+                result.Append(value);
+            }
+
+            return result.Insert(0, prefix).ToString();
+        }
+
         public static string FormatArray(List<string>? values)
         {
             if (values is null)

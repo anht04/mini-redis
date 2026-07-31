@@ -60,41 +60,52 @@ async Task HandleClientAsync(Socket client, ChannelWriter<CommandRequest> writer
             {
                 isInTransaction = true;
                 response = RESPFormatHelper.FormatSimpleString("OK");
+                await client.SendAsync(Encoding.UTF8.GetBytes(response));
             }
 
-            else if(isInTransaction && commandName != "EXEC")
+            else if (isInTransaction && commandName != "EXEC")
             {
                 queuedArgs.Enqueue(parsedArgs);
                 response = RESPFormatHelper.FormatSimpleString("QUEUED");
+                await client.SendAsync(Encoding.UTF8.GetBytes(response));
             }
 
             else if (commandName == "EXEC")
             {
+                response = RESPFormatHelper.FormatArray((string?)null);
                 if (!isInTransaction)
                 {
                     response = RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.Transaction.ExecWithoutMulti);
+                    await client.SendAsync(Encoding.UTF8.GetBytes(response));
+                }
+                else if (queuedArgs.Count == 0)
+                {
+                    await client.SendAsync(Encoding.UTF8.GetBytes(response));
+                    isInTransaction = false;
                 }
                 else
                 {
-                    response = RESPFormatHelper.FormatSimpleString(RedisErrorMessages.Transaction.ArgsNotFound);
-                    while(queuedArgs.Count > 0)
+                    List<string> result = [];
+                    while (queuedArgs.Count > 0)
                     {
                         var nextParsedArgs = queuedArgs.Dequeue();
-                        var nextCommandName = parsedArgs[0].ToUpper();
-                        var nextCommand = CommandFactory.GetCommand(commandName);
-                        var request = new CommandRequest { Args = queuedArgs.Dequeue(), Command = nextCommand!, Writer = writer };
+                        var nextCommandName = nextParsedArgs[0].ToUpper();
+                        var nextCommand = CommandFactory.GetCommand(nextCommandName);
+                        var request = new CommandRequest { Args = nextParsedArgs, Command = nextCommand!, Writer = writer };
                         try
                         {
                             await writer.WriteAsync(request);
-                            response = await request.ReplyTcs.Task;
+                            var commandResponse = await request.ReplyTcs.Task;
+                            result.Add(commandResponse);
                         }
                         catch (Exception e)
                         {
                             Console.WriteLine("Exception occured:" + e);
-                            response = RESPFormatHelper.FormatSimpleErrorString(e.Message);
+                            result.Add(RESPFormatHelper.FormatSimpleErrorString(e.Message));
                         }
                         isInTransaction = false;
                     }
+                    await client.SendAsync(Encoding.UTF8.GetBytes(RESPFormatHelper.FormatArrayWithRawStyle(result)));
                 }
             }
 
@@ -111,14 +122,14 @@ async Task HandleClientAsync(Socket client, ChannelWriter<CommandRequest> writer
                     Console.WriteLine("Exception occured:" + e);
                     response = RESPFormatHelper.FormatSimpleErrorString(e.Message);
                 }
+                await client.SendAsync(Encoding.UTF8.GetBytes(response));
             }
         }
         else
         {
             response = RESPFormatHelper.FormatSimpleErrorString("Unknown command: " + commandName);
+            await client.SendAsync(Encoding.UTF8.GetBytes(response));
         }
-
-        await client.SendAsync(Encoding.UTF8.GetBytes(response));
     }
 
     client.Close();
