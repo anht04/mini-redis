@@ -116,9 +116,9 @@ public record RedisStreamDataId
         return $"{timeStamp}-{sequence}";
     }
 
-    internal static bool IsGreaterThan(RedisStreamDataId newId, RedisStreamDataId? existingId)
+    internal static bool IsGreaterThan(RedisStreamDataId? newId, RedisStreamDataId? existingId)
     {
-        if (existingId is null)
+        if (newId is null || existingId is null)
         {
             return true;
         }

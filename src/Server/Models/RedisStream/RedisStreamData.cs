@@ -65,7 +65,7 @@ public class RedisStreamData
     public List<KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>> GetRangeGreaterThan(RedisStreamDataId? startId)
     {
         var dataInRange = Data
-            .Where(d => startId == null || (d.Key.Timestamp >= startId.Timestamp && d.Key.Sequence > startId.Sequence))
+            .Where(d => RedisStreamDataId.IsGreaterThan(d.Key, startId))
             .ToList();
 
         return dataInRange;
@@ -74,14 +74,17 @@ public class RedisStreamData
     public KeyValuePair<RedisStreamDataId, List<RedisStreamDataValue>>? GetLast(RedisStreamDataId? id)
     {
         var collection = Data
-            .Where(d => id == null || (d.Key.Timestamp >= id.Timestamp && d.Key.Sequence > id.Sequence));
+            .Where(d => RedisStreamDataId.IsGreaterThan(d.Key, id));
 
-        if(!collection.Any())
+        if (!collection.Any())
         {
             return null;
         }
 
-        return collection.MaxBy(d => d.Key.Sequence);
+        return collection
+            .OrderByDescending(d => d.Key.Timestamp)
+            .ThenByDescending(d => d.Key.Sequence)
+            .FirstOrDefault();
     }
 
     public RedisStreamDataId? GetCurrentLargestId(long timestamp)
