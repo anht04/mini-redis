@@ -31,6 +31,15 @@ namespace MiniRedis.Models.GlobalCache
         private bool IsList => DataType == RedisDataType.List;
         private bool IsStream => DataType == RedisDataType.Stream;
 
+        public int AsInt()
+        {
+            if (!IsString || !int.TryParse((string)_value, out var value))
+            {
+                throw new InvalidOperationException(RedisErrorMessages.WrongTypeOperation);
+            }
+            return value;
+        }
+
         public string AsString()
         {
             if (!IsString)

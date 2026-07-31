@@ -20,6 +20,7 @@ public static class CommandFactory
         { CommandConstants.XADD, new XAddCommand() },
         { CommandConstants.XRANGE, new XRangeCommand() },
         { CommandConstants.XREAD, new XReadCommand() },
+        { CommandConstants.INCR, new IncrCommand() },
     };
 
     public static ICommand? GetCommand(string commandName)

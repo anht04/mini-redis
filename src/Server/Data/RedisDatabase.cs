@@ -1,6 +1,7 @@
 using Common.Constants;
 using Common.Results;
 using MiniRedis.Commands.Requests;
+using MiniRedis.Constants;
 using MiniRedis.Enums;
 using MiniRedis.Extensions;
 using MiniRedis.Models.GlobalCache;
@@ -89,5 +90,19 @@ namespace MiniRedis.Data
         public List<StreamDataResult>? XRange(RedisEntry cacheKey, string startId, string endId, XRangeCommandPurpose purpose) => _streamStore.XRange(cacheKey, startId, endId, purpose);
 
         public List<XReadStreamResult> XRead(XReadRequest request) => _streamStore.XRead(request);
+
+        public string Incr(RedisEntry cacheKey)
+        {
+            if (!_cache.TryGetValue(cacheKey, out var value))
+            {
+                var newValue = new RedisValue(CacheConstants.DefaultNewValueForIncrCommand);
+                _cache.Add(cacheKey, newValue);
+                return newValue.AsString();
+            }
+
+            var finalValue = (value.AsInt() + 1).ToString();
+            _cache[cacheKey] = new RedisValue(finalValue);
+            return finalValue;
+        }
     }
 }
