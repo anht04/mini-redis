@@ -14,5 +14,10 @@
         {
             public const string UnbalancedXREADArgs = "ERR Unbalanced XREAD list of streams: for each stream key an ID or '$' must be specified.";
         }
+        public static class Transaction
+        {
+            public const string ExecWithoutMulti = "ERR EXEC without MULTI";
+            public const string ArgsNotFound = "ERR EXEC without existing args";
+        }
     }
 }

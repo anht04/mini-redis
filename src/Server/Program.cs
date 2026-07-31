@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Channels;
+using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Commands.Factories;
 using MiniRedis.Commands.Requests;
@@ -32,6 +33,9 @@ while (true)
 
 async Task HandleClientAsync(Socket client, ChannelWriter<CommandRequest> writer)
 {
+    bool isInTransaction = false;
+    var queuedArgs = new Queue<List<string>>();
+
     var buffer = new byte[1024];
     while (true)
     {
@@ -52,16 +56,61 @@ async Task HandleClientAsync(Socket client, ChannelWriter<CommandRequest> writer
 
         if (command != null)
         {
-            var request = new CommandRequest { Args = parsedArgs, Command = command, Writer = writer };
-            try
+            if (commandName == "MULTI")
             {
-                await writer.WriteAsync(request);
-                response = await request.ReplyTcs.Task;
+                isInTransaction = true;
+                response = RESPFormatHelper.FormatSimpleString("OK");
             }
-            catch (Exception e)
+
+            else if(isInTransaction && commandName != "EXEC")
             {
-                Console.WriteLine("Exception occured:" + e);
-                response = RESPFormatHelper.FormatSimpleErrorString(e.Message);
+                queuedArgs.Enqueue(parsedArgs);
+                response = RESPFormatHelper.FormatSimpleString("QUEUED");
+            }
+
+            else if (commandName == "EXEC")
+            {
+                if (!isInTransaction)
+                {
+                    response = RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.Transaction.ExecWithoutMulti);
+                }
+                else
+                {
+                    response = RESPFormatHelper.FormatSimpleString(RedisErrorMessages.Transaction.ArgsNotFound);
+                    while(queuedArgs.Count > 0)
+                    {
+                        var nextParsedArgs = queuedArgs.Dequeue();
+                        var nextCommandName = parsedArgs[0].ToUpper();
+                        var nextCommand = CommandFactory.GetCommand(commandName);
+                        var request = new CommandRequest { Args = queuedArgs.Dequeue(), Command = nextCommand!, Writer = writer };
+                        try
+                        {
+                            await writer.WriteAsync(request);
+                            response = await request.ReplyTcs.Task;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Exception occured:" + e);
+                            response = RESPFormatHelper.FormatSimpleErrorString(e.Message);
+                        }
+                        isInTransaction = false;
+                    }
+                }
+            }
+
+            else
+            {
+                var request = new CommandRequest { Args = parsedArgs, Command = command, Writer = writer };
+                try
+                {
+                    await writer.WriteAsync(request);
+                    response = await request.ReplyTcs.Task;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception occured:" + e);
+                    response = RESPFormatHelper.FormatSimpleErrorString(e.Message);
+                }
             }
         }
         else

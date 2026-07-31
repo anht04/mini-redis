@@ -18,4 +18,5 @@ public static class CommandConstants
     public const string XREAD = "XREAD";
     public const string INCR = "INCR";
     public const string MULTI = "MULTI";
+    public const string EXEC = "EXEC";
 }
