@@ -23,6 +23,7 @@ public static class CommandFactory
         { CommandConstants.INCR, new IncrCommand() },
         { CommandConstants.MULTI, new MultiCommand() },
         { CommandConstants.EXEC, new ExecCommand() },
+        { CommandConstants.DISCARD, new DiscardCommand() },
     };
 
     public static ICommand? GetCommand(string commandName)

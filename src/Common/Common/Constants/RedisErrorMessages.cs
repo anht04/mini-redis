@@ -17,6 +17,7 @@
         public static class Transaction
         {
             public const string ExecWithoutMulti = "ERR EXEC without MULTI";
+            public const string DiscardWithoutMulti = "ERR DISCARD without MULTI";
             public const string ArgsNotFound = "ERR EXEC without existing args";
         }
     }

@@ -6,6 +6,7 @@ using Common.Constants;
 using Common.Helpers;
 using MiniRedis.Commands.Factories;
 using MiniRedis.Commands.Requests;
+using MiniRedis.Constants;
 using MiniRedis.Data;
 using MiniRedis.Helpers;
 using MiniRedis.Models;
@@ -59,6 +60,18 @@ async Task HandleClientAsync(Socket client, ChannelWriter<CommandRequest> writer
             if (commandName == "MULTI")
             {
                 isInTransaction = true;
+                response = RESPFormatHelper.FormatSimpleString("OK");
+                await client.SendAsync(Encoding.UTF8.GetBytes(response));
+            }
+            else if (commandName == CommandConstants.DISCARD)
+            {
+                if (!isInTransaction)
+                {
+                    response = RESPFormatHelper.FormatSimpleErrorString(RedisErrorMessages.Transaction.DiscardWithoutMulti);
+                    await client.SendAsync(Encoding.UTF8.GetBytes(response));
+                }
+                isInTransaction = false;
+                queuedArgs.Clear();
                 response = RESPFormatHelper.FormatSimpleString("OK");
                 await client.SendAsync(Encoding.UTF8.GetBytes(response));
             }
